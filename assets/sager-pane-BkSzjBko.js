@@ -1,1 +1,0 @@
-import{t as e}from"./mester-desk-BY_YIAtv.js";export{e as SagerPane};
