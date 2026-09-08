@@ -1,0 +1,1 @@
+var e=new Set([4,12,22,24,33,168,172,181,185,217,238,239,244,321]);function t(t){let n=typeof t==`number`?t:Number(String(t).replace(/\D/g,``));return Number.isFinite(n)&&e.has(n)}export{t};
