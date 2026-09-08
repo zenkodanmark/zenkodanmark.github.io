@@ -1,1 +1,0 @@
-import{t as e}from"./jsx-runtime-0vZSBttN.js";import{D as t,I as n}from"./index-CH-OjIzb.js";var r=e(),i=function(){let{e,pin:i}=t.useSearch();return(0,r.jsx)(n,{empId:e,pin:i})};export{i as component};
