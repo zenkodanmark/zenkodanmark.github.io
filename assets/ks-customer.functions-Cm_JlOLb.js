@@ -1,1 +1,0 @@
-import{t as e}from"./createServerFn-BhjtAn0M.js";import{S as t}from"./index-C4ZW-mbE.js";var n=e({method:`GET`}).handler(t(`69f40b7aea71f1d9411473ad41ff6f6b486fd11216feb41375afc20069e671dd`)),r=e({method:`POST`}).handler(t(`5a25fcd7d1a3cb366393bcc58e33cec9ceda172b7e64b4d6fd941c7a3aa07243`));export{r as n,n as t};
