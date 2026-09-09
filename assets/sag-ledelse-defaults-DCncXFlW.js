@@ -1,1 +1,0 @@
-var e=new Set([`292`,`368`,`383`,`385`,`387`,`388`]),t=new Set([`366`]);function n(e){return String(e).trim().replace(/^(AS|TF|ER|KS)[-.\s]*/i,``).replace(/\s+/g,``)}function r(r,i){let a=String(i).trim();if(r===`tf`)return/Z-TF-2026-006/i.test(a);let o=n(a);return r===`as`?e.has(o):t.has(o)}function i(e,t){return r(e,t)?`med_til_ledelse`:`skjult`}export{i as t};

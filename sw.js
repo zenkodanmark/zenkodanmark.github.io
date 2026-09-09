@@ -23,8 +23,8 @@ self.addEventListener("push", (event) => {
       body: data.body || "",
       data: { url: data.url || "/" },
       tag: data.tag || data.kind || "zenko",
-      icon: "/zenko-logo.svg",
-      badge: "/__grok/icon-180.png",
+      icon: "/icons/icon-512.png",
+      badge: "/icons/apple-touch-icon.png",
     }),
   );
 });
