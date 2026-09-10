@@ -1,1 +1,0 @@
-function e(e){return e===`pl`||e===`ro`||e===`es`?e:`da`}function t(e){let t=e.trim().match(/^data:([^;]+);base64,(.+)$/s);return t?{mime:t[1]||`image/jpeg`,base64:t[2]||``}:{mime:`image/jpeg`,base64:e.replace(/^data:[^,]*,/,``)}}export{e as n,t};
