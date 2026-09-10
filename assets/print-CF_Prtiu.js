@@ -1,1 +1,0 @@
-import{Bt as e,Ht as t,Vt as n,et as r,zt as i}from"./index-DLLFukj3.js";function a(){window.print(),r.getState().notSent()}var o={firm:i,line:n,mail:t,cvr:`CVR ${e}`,mark:`ZENKO DANMARK`};export{a as n,o as t};
