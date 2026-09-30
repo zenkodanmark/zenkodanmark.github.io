@@ -1,0 +1,1 @@
+import{t as e}from"./mester-desk-DTvk_UN3.js";export{e as SagerPane};
