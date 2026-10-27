@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="da">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="googlebot" content="noindex, nofollow" />
+    <meta name="theme-color" content="#f4efe6" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Send til LIVA</title>
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="stylesheet" href="styles.css?v=1" />
+  </head>
+  <body>
+    <main class="sheet">
+      <header class="top">
+        <div class="brand-row">
+          <img class="logo" src="/zenko-logo.svg" alt="Zenko" width="72" height="72" />
+          <p class="test">Testversion</p>
+        </div>
+        <h1>Send til LIVA</h1>
+        <p class="lede">
+          Send fotos og dokumenter til LIVA LIND. Intet login, og intet lander i Zenko's kamerarulle.
+        </p>
+      </header>
+
+      <div class="actions" id="actions">
+        <label class="action action-camera">
+          <span class="action-title">Tag billede</span>
+          <span class="action-hint">Åbner kameraet</span>
+          <input id="camera" type="file" accept="image/*" capture="environment" />
+        </label>
+        <label class="action action-scan">
+          <span class="action-title">Scan dokument</span>
+          <span class="action-hint">Kamera, bedre til tekst</span>
+          <input id="scan" type="file" accept="image/*" capture="environment" />
+        </label>
+        <label class="action action-gallery">
+          <span class="action-title">Vælg fra galleri</span>
+          <span class="action-hint">Billeder og PDF</span>
+          <input id="gallery" type="file" accept="image/*,application/pdf,.pdf" multiple />
+        </label>
+      </div>
+
+      <p id="count" class="count">Ingen filer valgt endnu.</p>
+      <ul id="files" class="files"></ul>
+
+      <form id="form">
+        <label class="field" for="sender">Dit navn (valgfrit)</label>
+        <input id="sender" name="sender" type="text" maxlength="120" autocomplete="name" />
+
+        <label class="field" for="note">Kort note (valgfrit)</label>
+        <textarea
+          id="note"
+          name="note"
+          maxlength="2000"
+          rows="3"
+          autocomplete="off"
+          placeholder="Fx faktura, eller hvilken sag det gælder"
+        ></textarea>
+
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+
+        <button id="send" type="submit" disabled>Afsend</button>
+        <p class="limits">
+          Flere filer kan sendes samlet. Højst 8. Billeder gøres mindre på telefonen. PDF højst 8 MB.
+        </p>
+      </form>
+    </main>
+    <script src="app.js?v=1"></script>
+  </body>
+</html>
