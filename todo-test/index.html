@@ -44,7 +44,7 @@ const URL_="https://jauggqxhemjnbxoxkpeh.supabase.co",KEY="eyJhbGciOiJIUzI1NiIsI
 const H={apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json"};
 let todos=[],events=[],openSet=new Set();
 const $=s=>document.querySelector(s);
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&","<":"<",">":">",'"':""","'":"&#39;"}[c]));
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>"\x26#"+c.charCodeAt(0)+";");
 const fmt=d=>d?new Date(d).toLocaleString("da-DK",{dateStyle:"short",timeStyle:"short",timeZone:"Europe/Copenhagen"}):"";
 function toast(m,ok=true){const t=$("#toast");t.textContent=m;t.className=ok?"ok":"err";t.style.display="block";clearTimeout(t._h);t._h=setTimeout(()=>t.style.display="none",ok?2500:6000)}
 async function api(path,opt={}){const r=await fetch(URL_+"/rest/v1/"+path,{...opt,headers:{...H,...(opt.headers||{})}});if(!r.ok){let m=r.status+" ";try{m+=(await r.json()).message}catch(e){}throw new Error(m)}const t=await r.text();return t?JSON.parse(t):null}
