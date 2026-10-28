@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zenko To-Do (TEST)</title>
+<style>
+:root{--bg:#0b1a2e;--card:#11253f;--line:#1e3a5c;--teal:#14b8a6;--teal2:#0d9488;--txt:#e6eef7;--mut:#8aa3bf;--red:#ef4444;--ok:#22c55e}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+header{padding:16px;background:linear-gradient(90deg,#0b1a2e,#0f3a4a);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+h1{margin:0;font-size:20px}h1 small{color:var(--teal);font-size:12px;border:1px solid var(--teal);border-radius:4px;padding:1px 6px;margin-left:8px;vertical-align:middle}
+main{max-width:900px;margin:0 auto;padding:16px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+input,select,textarea{background:#0a1628;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--teal);border-color:transparent}
+#q{flex:1 1 200px}button{background:var(--teal2);color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer}
+button:hover{background:var(--teal)}button.sec{background:transparent;border:1px solid var(--line);color:var(--txt)}button.ok{background:#15803d}
+button:disabled{opacity:.5;cursor:wait}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:16px}
+h2{margin:0 0 10px;font-size:16px;color:var(--teal)}
+.t{border-top:1px solid var(--line);padding:10px 0}.t:first-of-type{border-top:0}
+.hd{display:flex;gap:10px;cursor:pointer;align-items:flex-start}.nr{color:var(--mut);min-width:34px}.tx{flex:1;min-width:0;word-wrap:break-word}
+.tag{display:inline-block;font-size:12px;border-radius:999px;padding:0 8px;margin:4px 6px 0 0;border:1px solid var(--line);color:var(--mut)}
+.tag.h{background:var(--red);border-color:var(--red);color:#fff}.tag.d{border-color:var(--ok);color:var(--ok)}
+.last{color:var(--mut);font-size:13px;margin-top:3px}.ar{color:var(--mut);transition:.2s}.open .ar{transform:rotate(180deg)}
+.pn{display:none;margin:10px 0 0 44px}.open .pn{display:block}
+.ev{font-size:13px;color:var(--mut);padding:3px 0}.ev b{color:var(--txt);font-weight:500}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.row textarea,.row input{flex:1 1 220px}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);padding:10px 16px;border-radius:8px;display:none;z-index:9;max-width:90vw;font-weight:600}
+#toast.ok{background:var(--ok);color:#04210f}#toast.err{background:var(--red);color:#fff}
+footer{color:var(--mut);font-size:12px;text-align:center;padding:20px}
+@media(max-width:600px){.pn{margin-left:0}main{padding:10px}}
+</style></head><body>
+<header><h1>Zenko To-Do <small>TEST</small></h1>
+<div class="bar"><input id="q" placeholder="Søg i opgaver …"><select id="pf"><option value="">Alle projekter</option></select>
+<button class="sec" id="csv">CSV-eksport</button><button class="sec" id="rl">Opdater</button></div></header>
+<main>
+<section><h2>Ny opgave</h2><div class="row"><input id="ny" placeholder="Beskriv den nye opgave — LIVA giver den et nummer"><button id="nyb">Send til LIVA</button></div></section>
+<section><h2 id="oh">Åbne opgaver</h2><div id="open">Indlæser …</div></section>
+<section><h2 id="dh">Udført</h2><div id="done"></div></section>
+<section><h2>Nye opgaver sendt til LIVA</h2><div id="news"></div></section>
+</main>
+<footer>Alt gemmes centralt i Zenko-appens database, så LIVA kan læse det. Testversion.</footer>
+<div id="toast"></div>
+<script>
+const URL_="https://jauggqxhemjnbxoxkpeh.supabase.co",KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphdWdncXhoZW1qbmJ4b3hrcGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NzczNjAsImV4cCI6MjEwNDQ1MzM2MH0.R052Q5jRd-mAwp5gI8ssKMzCHIo99U75-N46W4yxZWs";
+const H={apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json"};
+let todos=[],events=[],openSet=new Set();
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&","<":"<",">":">",'"':""","'":"&#39;"}[c]));
+const fmt=d=>d?new Date(d).toLocaleString("da-DK",{dateStyle:"short",timeStyle:"short",timeZone:"Europe/Copenhagen"}):"";
+function toast(m,ok=true){const t=$("#toast");t.textContent=m;t.className=ok?"ok":"err";t.style.display="block";clearTimeout(t._h);t._h=setTimeout(()=>t.style.display="none",ok?2500:6000)}
+async function api(path,opt={}){const r=await fetch(URL_+"/rest/v1/"+path,{...opt,headers:{...H,...(opt.headers||{})}});if(!r.ok){let m=r.status+" ";try{m+=(await r.json()).message}catch(e){}throw new Error(m)}const t=await r.text();return t?JSON.parse(t):null}
+async function load(){try{[todos,events]=await Promise.all([api("liva_todos?select=*&order=nr"),api("liva_todo_events?select=*&order=created_at.desc&limit=2000")]);render()}catch(e){toast("Kunne ikke hente data: "+e.message,false);$("#open").textContent="Fejl ved indlæsning."}}
+function evFor(nr){return events.filter(e=>e.nr===nr)}
+const KN={status:"Status",udfoert:"Udført",genaabnet:"Genåbnet",ny:"Ny"};
+function item(t,done){const ev=evFor(t.nr),last=ev.find(e=>e.kind==="status");
+return `<div class="t ${openSet.has(t.nr)?"open":""}" data-nr="${t.nr}"><div class="hd" data-tg="${t.nr}"><span class="nr">#${t.nr}</span><div class="tx">${esc(t.tekst)}<div>${t.haste&&!done?'<span class="tag h">Haste</span>':""}${t.projekt?`<span class="tag">${esc(t.projekt)}</span>`:""}${done?`<span class="tag d">Udført ${fmt(t.done_at)}</span>`:""}</div>${done&&t.done_note?`<div class="last">Hvordan: ${esc(t.done_note)}</div>`:""}${last?`<div class="last">Seneste status (${fmt(last.created_at)}): ${esc(last.text)}</div>`:""}</div><span class="ar">▾</span></div>
+<div class="pn">${ev.length?ev.map(e=>`<div class="ev">${fmt(e.created_at)} — <b>${KN[e.kind]||e.kind}</b>: ${esc(e.text)}</div>`).join(""):'<div class="ev">Ingen historik endnu.</div>'}
+${done?`<div class="row"><button class="sec" data-re="${t.nr}">Genåbn</button></div>`:`<div class="row"><textarea rows="2" id="s${t.nr}" placeholder="Hvor langt er opgaven?"></textarea><button data-st="${t.nr}">Gem status</button></div>
+<div class="row"><input id="h${t.nr}" placeholder="Hvordan blev den løst? (valgfrit)"><button class="ok" data-dn="${t.nr}">Udført</button></div>`}</div></div>`}
+function render(){const q=$("#q").value.toLowerCase(),pf=$("#pf").value;
+const projs=[...new Set(todos.map(t=>t.projekt).filter(Boolean))].sort();const sel=$("#pf");const cur=sel.value;
+sel.innerHTML='<option value="">Alle projekter</option><option value="-">Uden projekt</option>'+projs.map(p=>`<option>${esc(p)}</option>`).join("");sel.value=cur;
+const f=t=>(!q||(("#"+t.nr+" "+t.tekst+" "+(t.projekt||"")+" "+t.done_note).toLowerCase().includes(q)||evFor(t.nr).some(e=>(e.text||"").toLowerCase().includes(q))))&&(!pf||(pf==="-"?!t.projekt:t.projekt===pf));
+const op=todos.filter(t=>t.status!=="udfoert"&&f(t)).sort((a,b)=>(b.haste-a.haste)||(a.nr-b.nr));
+const dn=todos.filter(t=>t.status==="udfoert"&&f(t)).sort((a,b)=>new Date(b.done_at)-new Date(a.done_at));
+$("#oh").textContent=`Åbne opgaver (${op.length})`;$("#dh").textContent=`Udført (${dn.length})`;
+$("#open").innerHTML=op.map(t=>item(t,false)).join("")||"Ingen åbne opgaver.";
+$("#done").innerHTML=dn.map(t=>item(t,true)).join("")||"Ingen udførte endnu.";
+const nw=events.filter(e=>e.kind==="ny");$("#news").innerHTML=nw.map(e=>`<div class="ev">${fmt(e.created_at)} — ${esc(e.text)} ${e.handled_by_liva?'<span class="tag d">Modtaget af LIVA</span>':'<span class="tag">Afventer LIVA</span>'}</div>`).join("")||'<div class="ev">Ingen endnu.</div>'}
+async function act(btn,fn,msg){btn.disabled=true;try{await fn();toast(msg);await load()}catch(e){toast("Ikke gemt: "+e.message,false)}finally{btn.disabled=false}}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-tg],[data-st],[data-dn],[data-re]");if(!b)return;
+if(b.dataset.tg){const n=+b.dataset.tg;openSet.has(n)?openSet.delete(n):openSet.add(n);b.parentElement.classList.toggle("open");return}
+if(b.dataset.st){const n=+b.dataset.st,v=$("#s"+n).value.trim();if(!v)return toast("Skriv en status først",false);act(b,()=>api("liva_todo_events",{method:"POST",body:JSON.stringify({nr:n,kind:"status",text:v})}),"Status gemt ✓")}
+if(b.dataset.dn){const n=+b.dataset.dn,v=$("#h"+n).value.trim();openSet.delete(n);act(b,()=>api("rpc/liva_mark_done",{method:"POST",body:JSON.stringify({p_nr:n,p_note:v||null})}),`#${n} markeret udført ✓`)}
+if(b.dataset.re){const n=+b.dataset.re;act(b,()=>api("rpc/liva_reopen",{method:"POST",body:JSON.stringify({p_nr:n})}),`#${n} genåbnet ✓`)}});
+$("#nyb").onclick=e=>{const v=$("#ny").value.trim();if(!v)return toast("Skriv opgaven først",false);act(e.target,async()=>{await api("liva_todo_events",{method:"POST",body:JSON.stringify({nr:null,kind:"ny",text:v})});$("#ny").value=""},"Ny opgave sendt til LIVA ✓")};
+$("#q").oninput=render;$("#pf").onchange=render;$("#rl").onclick=load;
+$("#csv").onclick=()=>{const c=s=>'"'+String(s??"").replace(/"/g,'""')+'"';const lines=[["nr","tekst","projekt","haste","status","udfoert","hvordan","seneste status"].join(";")];
+todos.forEach(t=>{const l=evFor(t.nr).find(e=>e.kind==="status");lines.push([t.nr,c(t.tekst),c(t.projekt),t.haste?"ja":"nej",t.status,fmt(t.done_at),c(t.done_note),c(l?l.text:"")].join(";"))});
+const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+lines.join("\n")],{type:"text/csv"}));a.download="zenko_todo_"+new Date().toISOString().slice(0,10)+".csv";a.click()};
+load();setInterval(load,60000);
+</script></body></html>
