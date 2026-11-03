@@ -2,13 +2,13 @@
 <title>Oles kalender</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f4f1ff;color:#1e1b3a}
-header{position:sticky;top:0;z-index:5;background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;padding:10px 14px;box-shadow:0 2px 8px #0003}
+header{background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;padding:10px 14px;box-shadow:0 2px 8px #0003}
 header h1{margin:0;font-size:20px}header .row{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
 header input{flex:1;min-width:120px;padding:10px;border-radius:12px;border:0;font-size:16px}
 header button{padding:10px 14px;border-radius:12px;border:0;font-weight:700;font-size:15px;background:#fff;color:#7c3aed}
 #st{font-size:12px;opacity:.9;margin-top:4px}
 main{max-width:640px;margin:0 auto;padding:8px 10px 80px}
-.mh{position:sticky;top:96px;z-index:3;margin:18px 0 6px;padding:8px 14px;border-radius:14px;background:#1e1b3a;color:#fff;font-size:18px;font-weight:800}
+.mh{position:sticky;top:0;z-index:3;margin:18px 0 6px;padding:8px 14px;border-radius:14px;background:#1e1b3a;color:#fff;font-size:18px;font-weight:800}
 .day{display:flex;gap:10px;background:#fff;border-radius:16px;margin:6px 0;padding:10px 12px;min-height:56px;box-shadow:0 1px 3px #0001;border-left:6px solid #c4b5fd}
 .day.we{background:#fff4d6;border-left-color:#f59e0b}.day.today{outline:3px solid #ec4899}
 .dl{width:62px;flex:none;text-align:center}.dl .n{font-size:24px;font-weight:800;line-height:1}.dl .w{font-size:12px;text-transform:uppercase;color:#6b6790;font-weight:700}
@@ -26,7 +26,7 @@ main{max-width:640px;margin:0 auto;padding:8px 10px 80px}
 .ok{background:#7c3aed;color:#fff}
 </style></head><body>
 <header><h1>&#128197; Oles kalender</h1><div class="row"><input id="who" placeholder="Dit navn"><button id="go">I dag</button><button id="rf">&#128260;</button></div><div id="st">Henter...</div></header>
-<main id="cal"></main>
+<main id="cal"></main><button id="fab" style="position:fixed;right:16px;bottom:16px;z-index:8;border:0;border-radius:999px;padding:14px 18px;font-size:16px;font-weight:800;color:#fff;background:linear-gradient(90deg,#7c3aed,#ec4899);box-shadow:0 4px 12px #0004">&#128197; I dag</button>
 <div id="dlg"><div class="p"><h3 id="dt" style="margin:0 0 6px"></h3><input type="hidden" id="fid"><input type="hidden" id="fdate">
 <select id="ftype"></select><input id="ftitle" placeholder="Overskrift"><textarea id="ftext" placeholder="Skriv hele noten her"></textarea>
 <div class="b"><button id="cn">Annuller</button><button id="sv" class="ok">Gem</button></div></div></div>
@@ -71,6 +71,6 @@ $("sv").onclick=()=>{const t=$("ftitle").value.trim(),tx=$("ftext").value.trim()
  const id=$("fid").value||Date.now().toString(36)+Math.random().toString(36).slice(2,8);
  save({id,date:$("fdate").value,type:$("ftype").value,title:t,text:tx,who:$("who").value.trim(),ts:0,del:false});$("dlg").style.display="none"};
 function goToday(){const el=$("d"+iso(new Date()));if(el)el.scrollIntoView({block:"center"})}
-$("go").onclick=goToday;$("rf").onclick=load;
+$("go").onclick=goToday;$("fab").onclick=goToday;$("rf").onclick=load;
 render();load().then(goToday);setInterval(()=>{if($("dlg").style.display!=="flex")load()},60000);
 </script></body></html>
