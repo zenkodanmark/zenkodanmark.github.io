@@ -1,80 +1,76 @@
-<!DOCTYPE html>
-<html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fælles kalender</title>
+<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Oles kalender</title>
 <style>
-body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f4f5f7;color:#222}
-header{background:#1f3b57;color:#fff;padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-header button{padding:6px 10px;border:0;border-radius:5px;cursor:pointer}
-#status{font-size:12px;opacity:.85}
-.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:10px}
-.mh{margin:14px 10px 0;text-transform:capitalize}
-.dh{font-weight:bold;text-align:center;padding:4px}
-.dh.we{color:#b3261e}
-.day{background:#fff;min-height:95px;border-radius:6px;padding:4px;cursor:pointer;border:2px solid transparent;font-size:12px;overflow:hidden}
-.day.we{background:#ffe9e6;border-color:#f3b3aa}
-.day.other{opacity:.4}.day.today{border-color:#1f3b57}
-.day .n{font-weight:bold;font-size:14px}
-.tag{display:block;margin-top:2px;padding:1px 4px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.t-start{background:#d7f0dc}.t-forloeb{background:#dde8fb}.t-eskalering{background:#fbd5d5;font-weight:bold}.t-note{background:#eee}
-#dlg{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center}
-#box{background:#fff;padding:14px;border-radius:8px;width:min(560px,95vw);max-height:90vh;overflow:auto}
-#box textarea,#box input,#box select{width:100%;box-sizing:border-box;margin:3px 0;padding:5px}
-.item{border-left:4px solid #999;padding:4px 8px;margin:6px 0;background:#fafafa}
-.item small{color:#666}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f4f1ff;color:#1e1b3a}
+header{position:sticky;top:0;z-index:5;background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;padding:10px 14px;box-shadow:0 2px 8px #0003}
+header h1{margin:0;font-size:20px}header .row{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
+header input{flex:1;min-width:120px;padding:10px;border-radius:12px;border:0;font-size:16px}
+header button{padding:10px 14px;border-radius:12px;border:0;font-weight:700;font-size:15px;background:#fff;color:#7c3aed}
+#st{font-size:12px;opacity:.9;margin-top:4px}
+main{max-width:640px;margin:0 auto;padding:8px 10px 80px}
+.mh{position:sticky;top:96px;z-index:3;margin:18px 0 6px;padding:8px 14px;border-radius:14px;background:#1e1b3a;color:#fff;font-size:18px;font-weight:800}
+.day{display:flex;gap:10px;background:#fff;border-radius:16px;margin:6px 0;padding:10px 12px;min-height:56px;box-shadow:0 1px 3px #0001;border-left:6px solid #c4b5fd}
+.day.we{background:#fff4d6;border-left-color:#f59e0b}.day.today{outline:3px solid #ec4899}
+.dl{width:62px;flex:none;text-align:center}.dl .n{font-size:24px;font-weight:800;line-height:1}.dl .w{font-size:12px;text-transform:uppercase;color:#6b6790;font-weight:700}
+.we .dl .w{color:#b45309}.body{flex:1;min-width:0}
+.item{border-radius:12px;padding:8px 10px;margin:0 0 6px;background:#eef2ff}
+.item b{display:block;font-size:15px;word-wrap:break-word}.item .tx{white-space:pre-wrap;word-wrap:break-word;font-size:14px;margin-top:3px}
+.item small{color:#6b6790;font-size:11px}.item .acts{margin-top:4px}
+.item button,.add{border:0;border-radius:10px;padding:8px 12px;font-size:14px;margin-right:6px;background:#fff;min-height:40px}
+.add{background:#f3e8ff;color:#7c3aed;font-weight:700;width:100%;text-align:left}
+.t-start{background:#dcfce7}.t-forloeb{background:#dbeafe}.t-eskalering{background:#fee2e2}
+#dlg{position:fixed;inset:0;background:#0007;display:none;align-items:flex-end;justify-content:center;z-index:10}
+#dlg .p{background:#fff;width:100%;max-width:640px;border-radius:20px 20px 0 0;padding:16px}
+#dlg select,#dlg input,#dlg textarea{width:100%;font-size:16px;padding:12px;border-radius:12px;border:2px solid #ddd6fe;margin:6px 0}
+#dlg textarea{min-height:140px}#dlg .b{display:flex;gap:8px}#dlg .b button{flex:1;padding:14px;border-radius:14px;border:0;font-size:16px;font-weight:700}
+.ok{background:#7c3aed;color:#fff}
 </style></head><body>
-<header><b>Fælles kalender</b>
-<button id="prev">◀</button><span id="mon" style="min-width:140px;text-align:center"></span><button id="next">▶</button>
-<button id="refresh">⟳ Opdater</button><input id="who" placeholder="Dit navn" style="padding:5px;width:110px">
-<span id="status"></span></header>
-<div id="grid"></div>
-<div id="dlg"><div id="box"></div></div>
+<header><h1>&#128197; Oles kalender</h1><div class="row"><input id="who" placeholder="Dit navn"><button id="go">I dag</button><button id="rf">&#128260;</button></div><div id="st">Henter...</div></header>
+<main id="cal"></main>
+<div id="dlg"><div class="p"><h3 id="dt" style="margin:0 0 6px"></h3><input type="hidden" id="fid"><input type="hidden" id="fdate">
+<select id="ftype"></select><input id="ftitle" placeholder="Overskrift"><textarea id="ftext" placeholder="Skriv hele noten her"></textarea>
+<div class="b"><button id="cn">Annuller</button><button id="sv" class="ok">Gem</button></div></div></div>
 <script>
-// Delt lager: textdb.dev (offentlig, nøglefri). Alle med linket kan læse/skrive.
-const STORE="https://textdb.dev/api/data/ole-kalender-56ab9c71055f9ec6";
-const CACHE="olekal-cache";
-let db={v:1,items:{}}, cur=new Date(); cur.setDate(1);
-const $=id=>document.getElementById(id);
-const AMP=String.fromCharCode(38);const ENT={"&":"#38;","<":"#60;",">":"#62;",'"':"#34;","'":"#39;","`":"#96;"};
-const esc=s=>String(s??"").replace(/[&<>"'`]/g,c=>AMP+ENT[c]);
-const pad=n=>String(n).padStart(2,"0"), ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
-const TYPES={note:"Note",start:"Start",forloeb:"Forløb",eskalering:"Eskalering"};
-$("who").value=localStorage.getItem("olekal-who")||""; $("who").onchange=e=>localStorage.setItem("olekal-who",e.target.value);
+const STORE="https://textdb.dev/api/data/ole-kalender-56ab9c71055f9ec6",CACHE="olekal-cache";
+const TYPES={note:"\u{1F4DD} Note",start:"\u{1F7E2} Start",forloeb:"\u{1F535} Forløb",eskalering:"\u{1F534} Eskalering"};
+const $=i=>document.getElementById(i);let db={v:1,items:{}};
+const C=String.fromCharCode,MAP={};MAP[C(38)]=C(38)+"amp;";MAP[C(60)]=C(38)+"lt;";MAP[C(62)]=C(38)+"gt;";MAP[C(34)]=C(38)+"quot;";MAP[C(39)]=C(38)+"#39;";
+const RX=new RegExp("["+C(38)+C(60)+C(62)+C(34)+C(39)+"]","g");const esc=s=>String(s==null?"":s).replace(RX,c=>MAP[c]);
+const st=t=>$("st").textContent=t;
+$("who").value=localStorage.getItem("olekal-who")||"";$("who").onchange=e=>localStorage.setItem("olekal-who",e.target.value);
 function clean(o){const out={v:1,items:{}};if(o&&o.items&&typeof o.items==="object")for(const[k,it]of Object.entries(o.items)){if(it&&typeof it==="object"&&/^\d{4}-\d\d-\d\d$/.test(it.date||""))out.items[k]={id:String(k),date:it.date,type:TYPES[it.type]?it.type:"note",title:String(it.title||"").slice(0,200),text:String(it.text||"").slice(0,5000),who:String(it.who||"").slice(0,60),ts:+it.ts||0,del:!!it.del}}return out}
 function merge(a,b){const r={v:1,items:{...a.items}};for(const[k,it]of Object.entries(b.items)){if(!r.items[k]||it.ts>r.items[k].ts)r.items[k]=it}return r}
 async function fetchRemote(){const r=await fetch(STORE+"?_="+Date.now(),{cache:"no-store"});if(!r.ok)throw Error(r.status);const t=await r.text();try{return clean(JSON.parse(t))}catch{return clean({})}}
-function st(m){$("status").textContent=m}
 async function load(){try{const rem=await fetchRemote();db=merge(clean(JSON.parse(localStorage.getItem(CACHE)||"{}")),rem);
- // lokale ændringer der ikke er nået op skubbes igen
  if(JSON.stringify(db)!==JSON.stringify(rem))await push();localStorage.setItem(CACHE,JSON.stringify(db));st("Opdateret "+new Date().toLocaleTimeString("da-DK"))}
- catch(e){db=clean(JSON.parse(localStorage.getItem(CACHE)||"{}"));st("Offline – viser cache ("+e.message+")")}render()}
-async function push(){// hent-flet-gem: henter seneste, fletter pr. element (nyeste ts vinder), gemmer, verificerer
- for(let i=0;i<3;i++){const rem=await fetchRemote();db=merge(rem,db);
-  const r=await fetch(STORE,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(db)});if(!r.ok)throw Error(r.status);
-  const chk=await fetchRemote();if(Object.keys(db.items).every(k=>chk.items[k]&&chk.items[k].ts>=db.items[k].ts)){db=merge(chk,db);return}}}
-async function save(it){it.ts=Date.now();db.items[it.id]=it;localStorage.setItem(CACHE,JSON.stringify(db));render();st("Gemmer…");
- try{await push();localStorage.setItem(CACHE,JSON.stringify(db));st("Gemt "+new Date().toLocaleTimeString("da-DK"))}catch(e){st("Ikke gemt online – prøver igen ved Opdater")}render()}
-function render(){const y=cur.getFullYear();$("mon").textContent=String(y);const today=ymd(new Date());let out="";
- for(let m=0;m<12;m++){let h=`<h3 class="mh">${esc(new Date(y,m,1).toLocaleDateString("da-DK",{month:"long",year:"numeric"}))}</h3><div class="grid">`+["Man","Tir","Ons","Tor","Fre","Lør","Søn"].map((d,i)=>`<div class="dh${i>4?" we":""}">${d}</div>`).join("");
- const first=new Date(y,m,1),off=(first.getDay()+6)%7,n=new Date(y,m+1,0).getDate();for(let i=0;i<off;i++)h+=`<div></div>`;
- for(let dd=1;dd<=n;dd++){const d=new Date(y,m,dd),k=ymd(d),we=d.getDay()%6===0;
-  const its=Object.values(db.items).filter(x=>x.date===k&&!x.del).sort((a,b)=>a.ts-b.ts);
-  h+=`<div class="day${we?" we":""}${k===today?" today":""}" data-d="${k}"><span class="n">${dd}</span>${we?" <small>weekend</small>":""}`+
-   its.map(x=>`<span class="tag t-${esc(x.type)}">${esc(TYPES[x.type])}: ${esc(x.title||x.text)}</span>`).join("")+`</div>`}
- out+=h+"</div>"}
- $("grid").innerHTML=out;document.querySelectorAll(".day").forEach(e=>e.onclick=()=>openDay(e.dataset.d))}
-function openDay(k){const its=Object.values(db.items).filter(x=>x.date===k&&!x.del).sort((a,b)=>a.ts-b.ts);
- $("box").innerHTML=`<h3>${esc(new Date(k+"T12:00").toLocaleDateString("da-DK",{weekday:"long",day:"numeric",month:"long",year:"numeric"}))}</h3>`+
- its.map(x=>`<div class="item t-${esc(x.type)}"><b>${esc(TYPES[x.type])}: ${esc(x.title)}</b><div style="white-space:pre-wrap">${esc(x.text)}</div><small>${esc(x.who)} · ${esc(new Date(x.ts).toLocaleString("da-DK"))}</small> <button data-e="${esc(x.id)}">Ret</button> <button data-x="${esc(x.id)}">Slet</button></div>`).join("")+
- `<hr><input type="hidden" id="fid"><select id="ftype">${Object.entries(TYPES).map(([a,b])=>`<option value="${a}">${b}</option>`).join("")}</select>
- <input id="ftitle" placeholder="Titel" maxlength="200"><textarea id="ftext" rows="4" placeholder="Note / beskrivelse" maxlength="5000"></textarea>
- <button id="fsave">Gem</button> <button id="fclose">Luk</button>`;
- $("dlg").style.display="flex";$("fclose").onclick=()=>$("dlg").style.display="none";
- $("box").querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>{const x=db.items[b.dataset.e];$("fid").value=x.id;$("ftype").value=x.type;$("ftitle").value=x.title;$("ftext").value=x.text});
- $("box").querySelectorAll("[data-x]").forEach(b=>b.onclick=async()=>{if(confirm("Slet?")){await save({...db.items[b.dataset.x],del:true});openDay(k)}});
- $("fsave").onclick=async()=>{const id=$("fid").value||(Date.now().toString(36)+Math.random().toString(36).slice(2,8));
-  if(!$("ftitle").value.trim()&&!$("ftext").value.trim())return;
-  await save({id,date:k,type:$("ftype").value,title:$("ftitle").value,text:$("ftext").value,who:$("who").value,del:false});openDay(k)}}
-$("prev").onclick=()=>{cur.setFullYear(cur.getFullYear()-1);render()};$("next").onclick=()=>{cur.setFullYear(cur.getFullYear()+1);render()};
-$("refresh").onclick=load;setInterval(()=>{if($("dlg").style.display!=="flex")load()},30000);
-try{render()}catch(e){console.error(e)}load();
+ catch(e){db=clean(JSON.parse(localStorage.getItem(CACHE)||"{}"));st("Offline, viser cache ("+e.message+")")}render()}
+async function push(){for(let i=0;i<3;i++){const rem=await fetchRemote();db=merge(rem,db);
+ const r=await fetch(STORE,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(db)});if(!r.ok)throw Error(r.status);
+ const chk=await fetchRemote();if(Object.keys(db.items).every(k=>chk.items[k]&&chk.items[k].ts>=db.items[k].ts)){db=merge(chk,db);return}}}
+async function save(it){it.ts=Date.now();db.items[it.id]=it;localStorage.setItem(CACHE,JSON.stringify(db));render();st("Gemmer...");
+ try{await push();localStorage.setItem(CACHE,JSON.stringify(db));st("Gemt "+new Date().toLocaleTimeString("da-DK"))}catch(e){st("Ikke gemt online, tryk \u{1F504}")}render()}
+const p2=n=>String(n).padStart(2,"0"),iso=d=>d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate());
+const WD=["Søn","Man","Tir","Ons","Tor","Fre","Lør"],MO=["Januar","Februar","Marts","April","Maj","Juni","Juli","August","September","Oktober","November","December"];
+function render(){const by={};for(const x of Object.values(db.items))if(!x.del)(by[x.date]=by[x.date]||[]).push(x);
+ const today=iso(new Date());let h="",d=new Date(2026,8,1),end=new Date(2027,11,31),m=-1;
+ while(d<=end){if(d.getMonth()!==m){m=d.getMonth();h+=`<div class="mh">${MO[m]} ${d.getFullYear()}</div>`}
+  const k=iso(d),w=d.getDay(),its=(by[k]||[]).sort((a,b)=>a.ts-b.ts);
+  h+=`<div class="day${w%6===0?" we":""}${k===today?" today":""}" id="d${k}"><div class="dl"><div class="w">${WD[w]}</div><div class="n">${d.getDate()}</div></div><div class="body">`+
+  its.map(x=>`<div class="item t-${esc(x.type)}"><b>${esc(TYPES[x.type])}: ${esc(x.title)}</b>${x.text?`<div class="tx">${esc(x.text)}</div>`:""}<small>${esc(x.who)} ${esc(new Date(x.ts).toLocaleString("da-DK"))}</small><div class="acts"><button data-e="${esc(x.id)}">\u270F\uFE0F Ret</button><button data-x="${esc(x.id)}">\u{1F5D1} Slet</button></div></div>`).join("")+
+  `<button class="add" data-a="${k}">+ Tilføj</button></div></div>`;d.setDate(d.getDate()+1)}
+ $("cal").innerHTML=h}
+function openDlg(date,x){$("fdate").value=date;$("fid").value=x?x.id:"";$("ftype").value=x?x.type:"note";$("ftitle").value=x?x.title:"";$("ftext").value=x?x.text:"";
+ $("dt").textContent=new Date(date+"T12:00").toLocaleDateString("da-DK",{weekday:"long",day:"numeric",month:"long",year:"numeric"});$("dlg").style.display="flex"}
+$("ftype").innerHTML=Object.entries(TYPES).map(([a,b])=>`<option value="${a}">${b}</option>`).join("");
+$("cal").onclick=e=>{const b=e.target.closest("button");if(!b)return;
+ if(b.dataset.a)openDlg(b.dataset.a);
+ if(b.dataset.e){const x=db.items[b.dataset.e];openDlg(x.date,x)}
+ if(b.dataset.x&&confirm("Slet denne note?")){const x={...db.items[b.dataset.x],del:true};save(x)}};
+$("cn").onclick=()=>$("dlg").style.display="none";
+$("sv").onclick=()=>{const t=$("ftitle").value.trim(),tx=$("ftext").value.trim();if(!t&&!tx)return;
+ const id=$("fid").value||Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+ save({id,date:$("fdate").value,type:$("ftype").value,title:t,text:tx,who:$("who").value.trim(),ts:0,del:false});$("dlg").style.display="none"};
+function goToday(){const el=$("d"+iso(new Date()));if(el)el.scrollIntoView({block:"center"})}
+$("go").onclick=goToday;$("rf").onclick=load;
+render();load().then(goToday);setInterval(()=>{if($("dlg").style.display!=="flex")load()},60000);
 </script></body></html>
