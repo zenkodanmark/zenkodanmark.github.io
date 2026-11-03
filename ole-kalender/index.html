@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fælles kalender</title>
+<style>
+body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f4f5f7;color:#222}
+header{background:#1f3b57;color:#fff;padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+header button{padding:6px 10px;border:0;border-radius:5px;cursor:pointer}
+#status{font-size:12px;opacity:.85}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:10px}
+.mh{margin:14px 10px 0;text-transform:capitalize}
+.dh{font-weight:bold;text-align:center;padding:4px}
+.dh.we{color:#b3261e}
+.day{background:#fff;min-height:95px;border-radius:6px;padding:4px;cursor:pointer;border:2px solid transparent;font-size:12px;overflow:hidden}
+.day.we{background:#ffe9e6;border-color:#f3b3aa}
+.day.other{opacity:.4}.day.today{border-color:#1f3b57}
+.day .n{font-weight:bold;font-size:14px}
+.tag{display:block;margin-top:2px;padding:1px 4px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-start{background:#d7f0dc}.t-forloeb{background:#dde8fb}.t-eskalering{background:#fbd5d5;font-weight:bold}.t-note{background:#eee}
+#dlg{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center}
+#box{background:#fff;padding:14px;border-radius:8px;width:min(560px,95vw);max-height:90vh;overflow:auto}
+#box textarea,#box input,#box select{width:100%;box-sizing:border-box;margin:3px 0;padding:5px}
+.item{border-left:4px solid #999;padding:4px 8px;margin:6px 0;background:#fafafa}
+.item small{color:#666}
+</style></head><body>
+<header><b>Fælles kalender</b>
+<button id="prev">◀</button><span id="mon" style="min-width:140px;text-align:center"></span><button id="next">▶</button>
+<button id="refresh">⟳ Opdater</button><input id="who" placeholder="Dit navn" style="padding:5px;width:110px">
+<span id="status"></span></header>
+<div id="grid"></div>
+<div id="dlg"><div id="box"></div></div>
+<script>
+// Delt lager: textdb.dev (offentlig, nøglefri). Alle med linket kan læse/skrive.
+const STORE="https://textdb.dev/api/data/ole-kalender-56ab9c71055f9ec6";
+const CACHE="olekal-cache";
+let db={v:1,items:{}}, cur=new Date(); cur.setDate(1);
+const $=id=>document.getElementById(id);
+const AMP=String.fromCharCode(38);const ENT={"&":"#38;","<":"#60;",">":"#62;",'"':"#34;","'":"#39;","`":"#96;"};
+const esc=s=>String(s??"").replace(/[&<>"'`]/g,c=>AMP+ENT[c]);
+const pad=n=>String(n).padStart(2,"0"), ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const TYPES={note:"Note",start:"Start",forloeb:"Forløb",eskalering:"Eskalering"};
+$("who").value=localStorage.getItem("olekal-who")||""; $("who").onchange=e=>localStorage.setItem("olekal-who",e.target.value);
+function clean(o){const out={v:1,items:{}};if(o&&o.items&&typeof o.items==="object")for(const[k,it]of Object.entries(o.items)){if(it&&typeof it==="object"&&/^\d{4}-\d\d-\d\d$/.test(it.date||""))out.items[k]={id:String(k),date:it.date,type:TYPES[it.type]?it.type:"note",title:String(it.title||"").slice(0,200),text:String(it.text||"").slice(0,5000),who:String(it.who||"").slice(0,60),ts:+it.ts||0,del:!!it.del}}return out}
+function merge(a,b){const r={v:1,items:{...a.items}};for(const[k,it]of Object.entries(b.items)){if(!r.items[k]||it.ts>r.items[k].ts)r.items[k]=it}return r}
+async function fetchRemote(){const r=await fetch(STORE+"?_="+Date.now(),{cache:"no-store"});if(!r.ok)throw Error(r.status);const t=await r.text();try{return clean(JSON.parse(t))}catch{return clean({})}}
+function st(m){$("status").textContent=m}
+async function load(){try{const rem=await fetchRemote();db=merge(clean(JSON.parse(localStorage.getItem(CACHE)||"{}")),rem);
+ // lokale ændringer der ikke er nået op skubbes igen
+ if(JSON.stringify(db)!==JSON.stringify(rem))await push();localStorage.setItem(CACHE,JSON.stringify(db));st("Opdateret "+new Date().toLocaleTimeString("da-DK"))}
+ catch(e){db=clean(JSON.parse(localStorage.getItem(CACHE)||"{}"));st("Offline – viser cache ("+e.message+")")}render()}
+async function push(){// hent-flet-gem: henter seneste, fletter pr. element (nyeste ts vinder), gemmer, verificerer
+ for(let i=0;i<3;i++){const rem=await fetchRemote();db=merge(rem,db);
+  const r=await fetch(STORE,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(db)});if(!r.ok)throw Error(r.status);
+  const chk=await fetchRemote();if(Object.keys(db.items).every(k=>chk.items[k]&&chk.items[k].ts>=db.items[k].ts)){db=merge(chk,db);return}}}
+async function save(it){it.ts=Date.now();db.items[it.id]=it;localStorage.setItem(CACHE,JSON.stringify(db));render();st("Gemmer…");
+ try{await push();localStorage.setItem(CACHE,JSON.stringify(db));st("Gemt "+new Date().toLocaleTimeString("da-DK"))}catch(e){st("Ikke gemt online – prøver igen ved Opdater")}render()}
+function render(){const y=cur.getFullYear();$("mon").textContent=String(y);const today=ymd(new Date());let out="";
+ for(let m=0;m<12;m++){let h=`<h3 class="mh">${esc(new Date(y,m,1).toLocaleDateString("da-DK",{month:"long",year:"numeric"}))}</h3><div class="grid">`+["Man","Tir","Ons","Tor","Fre","Lør","Søn"].map((d,i)=>`<div class="dh${i>4?" we":""}">${d}</div>`).join("");
+ const first=new Date(y,m,1),off=(first.getDay()+6)%7,n=new Date(y,m+1,0).getDate();for(let i=0;i<off;i++)h+=`<div></div>`;
+ for(let dd=1;dd<=n;dd++){const d=new Date(y,m,dd),k=ymd(d),we=d.getDay()%6===0;
+  const its=Object.values(db.items).filter(x=>x.date===k&&!x.del).sort((a,b)=>a.ts-b.ts);
+  h+=`<div class="day${we?" we":""}${k===today?" today":""}" data-d="${k}"><span class="n">${dd}</span>${we?" <small>weekend</small>":""}`+
+   its.map(x=>`<span class="tag t-${esc(x.type)}">${esc(TYPES[x.type])}: ${esc(x.title||x.text)}</span>`).join("")+`</div>`}
+ out+=h+"</div>"}
+ $("grid").innerHTML=out;document.querySelectorAll(".day").forEach(e=>e.onclick=()=>openDay(e.dataset.d))}
+function openDay(k){const its=Object.values(db.items).filter(x=>x.date===k&&!x.del).sort((a,b)=>a.ts-b.ts);
+ $("box").innerHTML=`<h3>${esc(new Date(k+"T12:00").toLocaleDateString("da-DK",{weekday:"long",day:"numeric",month:"long",year:"numeric"}))}</h3>`+
+ its.map(x=>`<div class="item t-${esc(x.type)}"><b>${esc(TYPES[x.type])}: ${esc(x.title)}</b><div style="white-space:pre-wrap">${esc(x.text)}</div><small>${esc(x.who)} · ${esc(new Date(x.ts).toLocaleString("da-DK"))}</small> <button data-e="${esc(x.id)}">Ret</button> <button data-x="${esc(x.id)}">Slet</button></div>`).join("")+
+ `<hr><input type="hidden" id="fid"><select id="ftype">${Object.entries(TYPES).map(([a,b])=>`<option value="${a}">${b}</option>`).join("")}</select>
+ <input id="ftitle" placeholder="Titel" maxlength="200"><textarea id="ftext" rows="4" placeholder="Note / beskrivelse" maxlength="5000"></textarea>
+ <button id="fsave">Gem</button> <button id="fclose">Luk</button>`;
+ $("dlg").style.display="flex";$("fclose").onclick=()=>$("dlg").style.display="none";
+ $("box").querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>{const x=db.items[b.dataset.e];$("fid").value=x.id;$("ftype").value=x.type;$("ftitle").value=x.title;$("ftext").value=x.text});
+ $("box").querySelectorAll("[data-x]").forEach(b=>b.onclick=async()=>{if(confirm("Slet?")){await save({...db.items[b.dataset.x],del:true});openDay(k)}});
+ $("fsave").onclick=async()=>{const id=$("fid").value||(Date.now().toString(36)+Math.random().toString(36).slice(2,8));
+  if(!$("ftitle").value.trim()&&!$("ftext").value.trim())return;
+  await save({id,date:k,type:$("ftype").value,title:$("ftitle").value,text:$("ftext").value,who:$("who").value,del:false});openDay(k)}}
+$("prev").onclick=()=>{cur.setFullYear(cur.getFullYear()-1);render()};$("next").onclick=()=>{cur.setFullYear(cur.getFullYear()+1);render()};
+$("refresh").onclick=load;setInterval(()=>{if($("dlg").style.display!=="flex")load()},30000);
+try{render()}catch(e){console.error(e)}load();
+</script></body></html>

@@ -46,8 +46,8 @@ jobs:
           from pathlib import Path
           src = Path("srcapp/.output/public")
           dst = Path("site")
-          # send-test is the two-day LIVA upload page. It is not part of the Plads build.
-          keep = {".git", ".github", "send-test"}
+          # ole-kalender is Oles shared calendar (not part of Plads). send-test is the two-day LIVA upload page. It is not part of the Plads build.
+          keep = {".git", ".github", "send-test", "ole-kalender"}
           for child in list(dst.iterdir()):
               if child.name in keep:
                   continue
