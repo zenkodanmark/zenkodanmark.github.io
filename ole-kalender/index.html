@@ -7,6 +7,7 @@ header{background:#1f3b57;color:#fff;padding:10px 14px;display:flex;gap:10px;ali
 header button{padding:6px 10px;border:0;border-radius:5px;cursor:pointer}
 #status{font-size:12px;opacity:.85}
 .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:10px}
+.mh{margin:14px 10px 0;text-transform:capitalize}
 .dh{font-weight:bold;text-align:center;padding:4px}
 .dh.we{color:#b3261e}
 .day{background:#fff;min-height:95px;border-radius:6px;padding:4px;cursor:pointer;border:2px solid transparent;font-size:12px;overflow:hidden}
@@ -25,7 +26,7 @@ header button{padding:6px 10px;border:0;border-radius:5px;cursor:pointer}
 <button id="prev">◀</button><span id="mon" style="min-width:140px;text-align:center"></span><button id="next">▶</button>
 <button id="refresh">⟳ Opdater</button><input id="who" placeholder="Dit navn" style="padding:5px;width:110px">
 <span id="status"></span></header>
-<div class="grid" id="grid"></div>
+<div id="grid"></div>
 <div id="dlg"><div id="box"></div></div>
 <script>
 // Delt lager: textdb.dev (offentlig, nøglefri). Alle med linket kan læse/skrive.
@@ -33,7 +34,8 @@ const STORE="https://textdb.dev/api/data/ole-kalender-56ab9c71055f9ec6";
 const CACHE="olekal-cache";
 let db={v:1,items:{}}, cur=new Date(); cur.setDate(1);
 const $=id=>document.getElementById(id);
-const esc=s=>String(s??"").replace(/[&<>"'`]/g,c=>({"&":"&","<":"<",">":">",'"':""","'":"&#39;","`":"&#96;"}[c]));
+const AMP=String.fromCharCode(38);const ENT={"&":"#38;","<":"#60;",">":"#62;",'"':"#34;","'":"#39;","`":"#96;"};
+const esc=s=>String(s??"").replace(/[&<>"'`]/g,c=>AMP+ENT[c]);
 const pad=n=>String(n).padStart(2,"0"), ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const TYPES={note:"Note",start:"Start",forloeb:"Forløb",eskalering:"Eskalering"};
 $("who").value=localStorage.getItem("olekal-who")||""; $("who").onchange=e=>localStorage.setItem("olekal-who",e.target.value);
@@ -51,14 +53,15 @@ async function push(){// hent-flet-gem: henter seneste, fletter pr. element (nye
   const chk=await fetchRemote();if(Object.keys(db.items).every(k=>chk.items[k]&&chk.items[k].ts>=db.items[k].ts)){db=merge(chk,db);return}}}
 async function save(it){it.ts=Date.now();db.items[it.id]=it;localStorage.setItem(CACHE,JSON.stringify(db));render();st("Gemmer…");
  try{await push();localStorage.setItem(CACHE,JSON.stringify(db));st("Gemt "+new Date().toLocaleTimeString("da-DK"))}catch(e){st("Ikke gemt online – prøver igen ved Opdater")}render()}
-function render(){const y=cur.getFullYear(),m=cur.getMonth();$("mon").textContent=cur.toLocaleDateString("da-DK",{month:"long",year:"numeric"});
- let h=["Man","Tir","Ons","Tor","Fre","Lør","Søn"].map((d,i)=>`<div class="dh${i>4?" we":""}">${d}</div>`).join("");
- const first=new Date(y,m,1),start=new Date(first);start.setDate(1-((first.getDay()+6)%7));const today=ymd(new Date());
- for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const k=ymd(d),we=d.getDay()%6===0;
+function render(){const y=cur.getFullYear();$("mon").textContent=String(y);const today=ymd(new Date());let out="";
+ for(let m=0;m<12;m++){let h=`<h3 class="mh">${esc(new Date(y,m,1).toLocaleDateString("da-DK",{month:"long",year:"numeric"}))}</h3><div class="grid">`+["Man","Tir","Ons","Tor","Fre","Lør","Søn"].map((d,i)=>`<div class="dh${i>4?" we":""}">${d}</div>`).join("");
+ const first=new Date(y,m,1),off=(first.getDay()+6)%7,n=new Date(y,m+1,0).getDate();for(let i=0;i<off;i++)h+=`<div></div>`;
+ for(let dd=1;dd<=n;dd++){const d=new Date(y,m,dd),k=ymd(d),we=d.getDay()%6===0;
   const its=Object.values(db.items).filter(x=>x.date===k&&!x.del).sort((a,b)=>a.ts-b.ts);
-  h+=`<div class="day${we?" we":""}${d.getMonth()!==m?" other":""}${k===today?" today":""}" data-d="${k}"><span class="n">${d.getDate()}</span>${we?" <small>weekend</small>":""}`+
+  h+=`<div class="day${we?" we":""}${k===today?" today":""}" data-d="${k}"><span class="n">${dd}</span>${we?" <small>weekend</small>":""}`+
    its.map(x=>`<span class="tag t-${esc(x.type)}">${esc(TYPES[x.type])}: ${esc(x.title||x.text)}</span>`).join("")+`</div>`}
- $("grid").innerHTML=h;document.querySelectorAll(".day").forEach(e=>e.onclick=()=>openDay(e.dataset.d))}
+ out+=h+"</div>"}
+ $("grid").innerHTML=out;document.querySelectorAll(".day").forEach(e=>e.onclick=()=>openDay(e.dataset.d))}
 function openDay(k){const its=Object.values(db.items).filter(x=>x.date===k&&!x.del).sort((a,b)=>a.ts-b.ts);
  $("box").innerHTML=`<h3>${esc(new Date(k+"T12:00").toLocaleDateString("da-DK",{weekday:"long",day:"numeric",month:"long",year:"numeric"}))}</h3>`+
  its.map(x=>`<div class="item t-${esc(x.type)}"><b>${esc(TYPES[x.type])}: ${esc(x.title)}</b><div style="white-space:pre-wrap">${esc(x.text)}</div><small>${esc(x.who)} · ${esc(new Date(x.ts).toLocaleString("da-DK"))}</small> <button data-e="${esc(x.id)}">Ret</button> <button data-x="${esc(x.id)}">Slet</button></div>`).join("")+
@@ -71,7 +74,7 @@ function openDay(k){const its=Object.values(db.items).filter(x=>x.date===k&&!x.d
  $("fsave").onclick=async()=>{const id=$("fid").value||(Date.now().toString(36)+Math.random().toString(36).slice(2,8));
   if(!$("ftitle").value.trim()&&!$("ftext").value.trim())return;
   await save({id,date:k,type:$("ftype").value,title:$("ftitle").value,text:$("ftext").value,who:$("who").value,del:false});openDay(k)}}
-$("prev").onclick=()=>{cur.setMonth(cur.getMonth()-1);render()};$("next").onclick=()=>{cur.setMonth(cur.getMonth()+1);render()};
+$("prev").onclick=()=>{cur.setFullYear(cur.getFullYear()-1);render()};$("next").onclick=()=>{cur.setFullYear(cur.getFullYear()+1);render()};
 $("refresh").onclick=load;setInterval(()=>{if($("dlg").style.display!=="flex")load()},30000);
-render();load();
+try{render()}catch(e){console.error(e)}load();
 </script></body></html>
