@@ -46,8 +46,11 @@ jobs:
           from pathlib import Path
           src = Path("srcapp/.output/public")
           dst = Path("site")
-          # ole-kalender is Oles shared calendar (not part of Plads). send-test is the two-day LIVA upload page. It is not part of the Plads build.
-          keep = {".git", ".github", "send-test", "ole-kalender"}
+          # ole-kalender is Oles shared calendar (not part of Plads).
+          # send-test is the two-day LIVA upload page.
+          # mangler is the public defect pages (Prøvestenen) plus photos committed by the upload function.
+          # None of them are part of the Plads build. Keep applies to both loops so a future build output cannot wipe them.
+          keep = {".git", ".github", "send-test", "ole-kalender", "mangler"}
           for child in list(dst.iterdir()):
               if child.name in keep:
                   continue
@@ -57,6 +60,8 @@ jobs:
                   else:
                       child.unlink()
           for child in src.iterdir():
+              if child.name in keep:
+                  continue
               dest = dst / child.name
               if dest.exists():
                   if dest.is_dir():
