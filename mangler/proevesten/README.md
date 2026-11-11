@@ -96,37 +96,41 @@ Upload-funktionen tilføjer rækker. Rør den kun, hvis en registrering skal væ
 
 `sti` er relativ til denne mappe. Samme `id` sendt igen bliver ikke gemt to gange.
 
+## Sådan markerer en ansat manglen udført
+
+På Zenko-mangler (ikke de grå) er der **Tag billede** og **Marker som udført**. Navn er påkrævet, kommentaren er valgfri, og der skal mindst ét billede med. Billedet bliver synligt for de andre med det samme. Mangler med `vores: false` kan ikke markeres her.
+
+## Hvor billederne ligger
+
+GitHub Pages kan ikke gemme filer. Billedet og registreringen lægges i den offentlige mappe `plads`, som Zenko Plads allerede bruger:
+
+- `mangler/proevesten/billeder/<nummer>/<id>-1.jpg`
+- `mangler/proevesten/registreringer/<id>.json`
+
+Nøglen i `config.js` er den offentlige publishable-nøgle, den samme som Plads-siden allerede har i browseren. Der skal ikke oprettes en Vercel-konto eller en GitHub-token for at de ansatte kan gemme.
+
+`udfoert.json` i git læses stadig med, hvis en bot har lagt rækker der. De ansattes billeder ligger i bucketten.
+
 ## Sådan læser en bot billederne
 
-```bash
-curl -fsS "https://raw.githubusercontent.com/zenkodanmark/zenkodanmark.github.io/main/mangler/proevesten/udfoert.json"
-curl -fsS -o fil.jpg "https://raw.githubusercontent.com/zenkodanmark/zenkodanmark.github.io/main/mangler/proevesten/billeder/L00-1599/FILNAVN.jpg"
-```
-
-Læg billederne i RIB Connex, luk manglen dér, og sæt bagefter `"status": "lukket"` på samme nummer i `mangler.json`.
-
-## Foto-upload
-
-GitHub Pages kan ikke gemme filer. En lille Vercel-funktion modtager billedet og committer det til dette repo. GitHub-tokenen ligger kun som environment variable på Vercel. `config.js` må kun indeholde den offentlige URL.
-
-Uden den URL virker listen og PDF'erne. Knappen **Marker som udført** vises først, når `uploadUrl` er sat.
-
-Funktionen ligger i `server/`. Den accepterer kun kald fra `https://zenkodanmark.github.io` (og localhost), kun mangler med `vores: true`, højst 4 billeder, kun jpeg/png/webp, og kræver navn. Ved to samtidige gem forsøger den igen, så den ene ikke overskriver den anden.
-
-### Det ejeren skal gøre
-
-1. Opret en fine-grained GitHub-token til repoet `zenkodanmark/zenkodanmark.github.io` med kun **Contents: Read and write**. Læg den ikke i koden.
-2. På Vercel: **Add New → Project**, vælg repoet `zenkodanmark.github.io`. Sæt **Root Directory** til `mangler/proevesten/server`. Framework: Other.
-3. Under **Settings → Environment Variables**: navn `GITHUB_TOKEN`, værdi = tokenen.
-4. Deploy. Kopiér adressen, den ligner `https://et-navn.vercel.app`.
-5. I `mangler/proevesten/config.js`: sæt `uploadUrl` til `https://et-navn.vercel.app/api/upload`. Commit og push til `main`.
-6. Åbn siden på telefonen, markér en mangel med et billede, og tjek at rækken ligger i `udfoert.json` og filen i `billeder/`.
-
-Lokal afprøvning af funktionen, stadig uden at lægge tokenen i en fil:
+Nøglen står i `config.js` som `supabaseKey`.
 
 ```bash
-cd mangler/proevesten/server
-GITHUB_TOKEN=... node dev-server.js
+curl -fsS -X POST \
+  -H "apikey: NØGLEN" \
+  -H "Authorization: Bearer NØGLEN" \
+  -H "Content-Type: application/json" \
+  -d '{"prefix":"mangler/proevesten/registreringer","limit":100}' \
+  "https://jauggqxhemjnbxoxkpeh.supabase.co/storage/v1/object/list/plads"
 ```
 
-`node --test test/lib.test.js` kører uden token og uden netværk.
+Hver fil er offentlig:
+
+```text
+https://jauggqxhemjnbxoxkpeh.supabase.co/storage/v1/object/public/plads/mangler/proevesten/registreringer/<id>.json
+https://jauggqxhemjnbxoxkpeh.supabase.co/storage/v1/object/public/plads/<sti-fra-json>
+```
+
+Læg billederne i RIB Connex, luk manglen dér, og sæt bagefter `"status": "lukket"` på samme nummer i `mangler.json`. Slet ikke billederne.
+
+Mappen `server/` er ikke koblet på siden. Den blev lavet til en Vercel-funktion, som ikke er nødvendig, fordi bucketten allerede findes.
