@@ -1,10 +1,13 @@
 (() => {
   const config = window.MANGLER_CONFIG || {};
-  const uploadUrl = String(config.uploadUrl || "").trim();
+  const supabaseUrl = String(config.supabaseUrl || "").replace(/\/$/, "");
+  const supabaseKey = String(config.supabaseKey || "");
+  const bucket = config.bucket || "plads";
   const repo = config.repo || "zenkodanmark/zenkodanmark.github.io";
   const branch = config.branch || "main";
   const mappe = config.mappe || "mangler/proevesten";
   const rawBase = `https://raw.githubusercontent.com/${repo}/${branch}/${mappe}/`;
+  const storageOn = Boolean(supabaseUrl && supabaseKey);
   const NAVN_KEY = "zenko-proevesten-navn";
   const MAX_PHOTOS = 4;
 
@@ -183,7 +186,6 @@
     if (!list) return;
     const cards = list.querySelector("#cards");
     const summary = list.querySelector("#summary");
-    const banner = list.querySelector("#banner");
     const count = counts();
     const labels = {
       status: {
@@ -200,7 +202,6 @@
     };
     const oursOpen = state.mangler.filter((item) => item.vores !== false && feltStatus(item) === "aaben").length;
     summary.textContent = `${oursOpen} åbne hos Zenko · ${count.ikke} andres · ${state.mangler.length} i alt`;
-    banner.hidden = Boolean(uploadUrl);
     for (const button of list.querySelectorAll(".chip")) {
       button.setAttribute("aria-pressed", String(button.dataset.value === state[button.dataset.group]));
       button.textContent = labels[button.dataset.group][button.dataset.value];
@@ -225,6 +226,17 @@
 
   function photoUrl(sti) {
     return `${rawBase}${sti}`;
+  }
+
+  function storagePublicUrl(sti) {
+    return `${supabaseUrl}/storage/v1/object/public/${bucket}/${String(sti).replace(/^\/+/, "")}`;
+  }
+
+  function photoSrc(photo) {
+    if (photo.url) return photo.url;
+    if (photo.lokal) return photo.lokal;
+    if (photo.sti && String(photo.sti).startsWith("mangler/")) return storagePublicUrl(photo.sti);
+    return photoUrl(photo.sti);
   }
 
   function buildDetail(mangel) {
@@ -270,11 +282,17 @@
       const photos = el("div", { class: "photos" });
       for (const photo of report.billeder || []) {
         const image = el("img", {
-          src: photo.lokal || photoUrl(photo.sti),
+          src: photoSrc(photo),
           alt: `Billede fra ${report.navn}`,
           loading: "lazy",
         });
-        if (!photo.lokal) {
+        if (photo.url && photo.lokal) {
+          image.addEventListener("error", () => {
+            if (image.dataset.fallback) return;
+            image.dataset.fallback = "1";
+            image.src = photo.lokal;
+          });
+        } else if (!photo.lokal && photo.sti && !String(photo.sti).startsWith("mangler/") && !photo.url) {
           image.addEventListener("error", () => {
             if (image.dataset.fallback) return;
             image.dataset.fallback = "1";
@@ -306,7 +324,7 @@
     if (status === "lukket") {
       return el("p", { class: "note", text: "Lukket i RIB. Der skal ikke lægges mere op her." });
     }
-    if (!uploadUrl) {
+    if (!storageOn) {
       return el("p", {
         class: "note",
         text: "Billeder kan ikke gemmes endnu. PDF'en ovenfor kan stadig åbnes.",
@@ -353,6 +371,7 @@
     });
     if (state.busy) submit.disabled = true;
     form.append(
+      el("p", { class: "meta", text: "Tag et billede af det udførte arbejde. Det kan ses af de andre bagefter." }),
       actions,
       drafts,
       el("label", { class: "field", for: "navn", text: "Dit navn" }, [name]),
@@ -519,38 +538,44 @@
     const submit = event.target.querySelector("button[type=submit]");
     if (submit) submit.disabled = true;
     try {
+      const id = crypto.randomUUID();
+      const kommentar = state.kommentar.trim();
       const billeder = [];
-      for (const draft of state.kladder) {
-        billeder.push({ data: await blobToBase64(draft.blob), type: "image/jpeg" });
+      for (let index = 0; index < state.kladder.length; index += 1) {
+        const draft = state.kladder[index];
+        const sti = `${mappe}/billeder/${mangel.nummer}/${id}-${index + 1}.jpg`;
+        await putObject(sti, draft.blob, "image/jpeg");
+        billeder.push({
+          sti,
+          url: storagePublicUrl(sti),
+          type: "image/jpeg",
+          bytes: draft.bytes,
+        });
       }
-      const response = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: crypto.randomUUID(),
-          nummer: mangel.nummer,
-          navn,
-          kommentar: state.kommentar.trim(),
-          billeder,
-        }),
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.fejl || "Kunne ikke gemme.");
-      }
+      const registrering = {
+        id,
+        nummer: mangel.nummer,
+        navn,
+        kommentar,
+        tidspunkt: new Date().toISOString(),
+        billeder,
+      };
+      await putObject(
+        `${mappe}/registreringer/${id}.json`,
+        new Blob([JSON.stringify(registrering)], { type: "application/json" }),
+        "application/json",
+      );
       localStorage.setItem(NAVN_KEY, navn);
       state.navn = navn;
       state.kommentar = "";
       const lokale = state.kladder.map((draft) => draft.url);
       state.kladder = [];
-      if (payload.registrering) {
-        (payload.registrering.billeder || []).forEach((photo, index) => {
-          if (lokale[index]) photo.lokal = lokale[index];
-        });
-        state.registreringer.push(payload.registrering);
-      }
+      billeder.forEach((photo, index) => {
+        if (lokale[index]) photo.lokal = lokale[index];
+      });
+      state.registreringer.push(registrering);
       state.busy = false;
-      state.besked = "Gemt. Alle kan se det, når listen opdateres.";
+      state.besked = "Gemt. De andre kan se billedet med det samme.";
       state.beskedKind = "ok";
       showDetail(mangel.nummer);
     } catch (error) {
@@ -563,16 +588,28 @@
     }
   }
 
-  function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const value = String(reader.result || "");
-        resolve(value.slice(value.indexOf(",") + 1));
-      };
-      reader.onerror = () => reject(new Error("Billedet kunne ikke læses."));
-      reader.readAsDataURL(blob);
+  function storageHeaders(extra) {
+    return {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+      ...extra,
+    };
+  }
+
+  async function putObject(path, body, type) {
+    const response = await fetch(`${supabaseUrl}/storage/v1/object/${bucket}/${path}`, {
+      method: "POST",
+      headers: storageHeaders({
+        "Content-Type": type,
+        "x-upsert": "true",
+        "cache-control": "3600",
+      }),
+      body,
     });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.message || payload.error || "Kunne ikke gemme.");
+    }
   }
 
   function setFormStatus(text, kind) {
@@ -638,12 +675,6 @@
           chip("ansvar", "ikke", `Ikke vores ${count.ikke}`),
         ]),
       ]),
-      el("p", {
-        id: "banner",
-        class: "banner",
-        hidden: Boolean(uploadUrl),
-        text: "Billeder og «udført» gemmes ikke endnu. Mangler og PDF'er kan bruges.",
-      }),
       el("div", { id: "cards" }),
     ]);
     app.replaceChildren(list, el("div", { id: "detail", hidden: true }));
@@ -716,7 +747,26 @@
     return list.reduce((max, item) => (String(item && item.tidspunkt) > max ? String(item.tidspunkt) : max), "");
   }
 
-  async function loadUdfoert() {
+  function gyldigRegistrering(item) {
+    return Boolean(
+      item &&
+        typeof item.id === "string" &&
+        /^L\d{2}-\d{1,6}$/.test(String(item.nummer || "")) &&
+        Array.isArray(item.billeder),
+    );
+  }
+
+  function mergeRegistrations(lists) {
+    const byId = new Map();
+    for (const list of lists) {
+      for (const item of list) {
+        if (gyldigRegistrering(item)) byId.set(item.id, item);
+      }
+    }
+    return [...byId.values()];
+  }
+
+  async function loadGitRegistrations() {
     const stamp = Date.now();
     const remote = loadJson(`${rawBase}udfoert.json?t=${stamp}`, 4000).catch(() => null);
     const local = loadJson(`udfoert.json?t=${stamp}`).catch(() => null);
@@ -727,6 +777,43 @@
       return senesteTid(freshList) >= senesteTid(nearList) ? freshList : nearList;
     }
     return freshList || nearList || [];
+  }
+
+  async function loadBucketRegistrations() {
+    if (!storageOn) return [];
+    const prefix = `${mappe}/registreringer`;
+    const names = [];
+    for (let offset = 0; offset < 500; offset += 100) {
+      const response = await fetch(`${supabaseUrl}/storage/v1/object/list/${bucket}`, {
+        method: "POST",
+        headers: storageHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          prefix,
+          limit: 100,
+          offset,
+          sortBy: { column: "name", order: "asc" },
+        }),
+      });
+      if (!response.ok) throw new Error(String(response.status));
+      const rows = await response.json();
+      if (!Array.isArray(rows) || !rows.length) break;
+      for (const row of rows) {
+        if (row && row.id && /\.json$/i.test(row.name || "")) names.push(`${prefix}/${row.name}`);
+      }
+      if (rows.length < 100) break;
+    }
+    const files = await Promise.all(
+      names.map((name) => loadJson(storagePublicUrl(name), 8000).catch(() => null)),
+    );
+    return files.filter(gyldigRegistrering);
+  }
+
+  async function loadUdfoert() {
+    const [fromGit, fromBucket] = await Promise.all([
+      loadGitRegistrations(),
+      loadBucketRegistrations().catch(() => []),
+    ]);
+    return mergeRegistrations([fromGit, fromBucket]);
   }
 
   async function load() {
