@@ -1,0 +1,8 @@
+{
+  "name": "proevesten-mangler-upload",
+  "private": true,
+  "description": "Gemmer billeder fra mangelsiden i git. GITHUB_TOKEN sættes kun som Vercel-env.",
+  "engines": {
+    "node": "22.x"
+  }
+}
