@@ -258,7 +258,7 @@
         href: mangel.pdf,
         target: "_blank",
         rel: "noopener",
-        text: "Åbn Dalux-PDF",
+        text: "Åbn PDF fra Connex",
       }),
     ]);
 

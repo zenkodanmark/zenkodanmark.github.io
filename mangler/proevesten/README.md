@@ -6,13 +6,13 @@ Efter merge til `main` ligger siden på:
 
 **https://zenkodanmark.github.io/mangler/proevesten/**
 
-Siden læser `mangler.json` (Dalux-manglerne) og `udfoert.json` (det folk har markeret på pladsen). PDF'erne ligger i `pdf/`.
+Siden læser `mangler.json` (manglerne fra RIB Connex) og `udfoert.json` (det folk har markeret på pladsen). PDF'erne ligger i `pdf/`.
 
 Mappen `mangler/` er undtaget i `.github/workflows/rebuild.yml`, så Plads-bygget hvert 20. minut ikke sletter siden eller billederne. Fjern ikke `mangler` fra den liste.
 
 ## Ny mangel
 
-1. Læg Dalux-PDF'en i `pdf/`. Brug et ASCII-filnavn, fx `pdf/L00-1700-Kort-titel.pdf`.
+1. Læg PDF'en fra RIB Connex i `pdf/`. Brug et ASCII-filnavn, fx `pdf/L00-1700-Kort-titel.pdf`.
 2. Tilføj ét objekt sidst i arrayet `mangler` i `mangler.json`.
 3. Commit til `main`. Siden henter filen ved næste besøg. Der skal ikke ændres kode.
 
@@ -21,17 +21,17 @@ Felter:
 | Felt | Krav |
 |---|---|
 | `nummer` | Unikt, fx `L00-1700`. Mønster `L` + to cifre + `-` + tal. |
-| `titel` | Kort titel fra Dalux. |
+| `titel` | Kort titel fra RIB Connex. |
 | `blok` | `Blok A`, `Blok B`, `Blok C`, `Blok D` eller `Plan`. |
 | `lokation` | Det sted mureren skal hen. |
 | `beskrivelse` | Hvad der skal laves, med de vigtige kommentarer. |
 | `bemærkning` | Valgfri kort linje på kortet. |
-| `ansvarlig` | Firmanavnet fra Dalux. |
+| `ansvarlig` | Firmanavnet fra RIB Connex. |
 | `entreprise` | Fx `240`, `410`, `110`. |
 | `vores` | `true` hvis Zenko skal udbedre den. `false` viser den grå under **Ikke vores**, og upload afviser den. |
 | `ikkeVoresGrund` | Kort forklaring når `vores` er `false`. Udelad feltet ellers. |
 | `oprettet`, `frist`, `sidstAendret` | `YYYY-MM-DD`. |
-| `daluxStatus` | Teksten fra Dalux, lige nu `Overdue`. |
+| `connexStatus` | Teksten fra RIB Connex, lige nu `Overdue`. |
 | `status` | `aaben` eller `lukket`. Se nedenfor. |
 | `pdf` | Sti fra denne mappe, fx `pdf/L00-1700-Kort-titel.pdf`. |
 
@@ -50,7 +50,7 @@ Eksempel:
   "oprettet": "2026-11-11",
   "frist": "2026-11-18",
   "sidstAendret": "2026-11-11",
-  "daluxStatus": "Overdue",
+  "connexStatus": "Overdue",
   "status": "aaben",
   "pdf": "pdf/L00-1700-Kort-titel.pdf"
 }
