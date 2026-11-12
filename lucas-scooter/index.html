@@ -226,6 +226,9 @@ h2:before{content:"";width:7px;height:.72em;border-radius:4px;background:var(--a
 }
 .textbtn.danger{color:#ffb4ae}
 .textbtn:hover,.textbtn:focus-visible{background:rgba(255,255,255,.05);color:#fff}
+.inline-edit{margin-top:8px}
+.tap-edit{cursor:pointer}
+#bSpent{border-bottom:1px dashed rgba(255,255,255,.28);outline:none}
 .empty{
   background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.16);
   border-radius:22px;padding:22px 16px;text-align:left;
@@ -349,8 +352,8 @@ button.b:disabled{opacity:.5;cursor:default}
     <div class="section-head">
       <div>
         <p class="kicker">Galleri</p>
-        <h2>Lukas scooterprojekt</h2>
-        <p class="lead">Billeder af det, du har lavet. Nyeste først. Tryk på et billede for at se det stort.</p>
+        <h2>Lucas scooterprojekt</h2>
+        <p class="lead">Billeder af det, du har lavet. Nyeste først. Tryk på et billede for at se det stort, og på teksten eller ✎ Ret for at ændre det.</p>
         <p class="meta-line" id="galleryMeta"></p>
       </div>
       <button class="b b1" type="button" id="openGallery">Læg billede op</button>
@@ -363,7 +366,7 @@ button.b:disabled{opacity:.5;cursor:default}
       <div>
         <p class="kicker">Dagbog</p>
         <h2>Hvad der skete</h2>
-        <p class="lead">Skriv et indlæg med dato. Titel og billede er valgfri. Du kan rette og slette dine egne indlæg.</p>
+        <p class="lead">Skriv et indlæg med dato. Titel og billede er valgfri. Tryk på teksten eller ✎ Ret for at ændre det. Sletning skal bekræftes.</p>
         <p class="meta-line" id="diaryMeta"></p>
       </div>
       <button class="b b1" type="button" id="openDiary">Nyt indlæg</button>
@@ -384,7 +387,7 @@ button.b:disabled{opacity:.5;cursor:default}
   <section>
     <div class="section-head"><div><p class="kicker">Økonomi</p><h2>Budget</h2></div></div>
     <div class="budget">
-      <div class="spec"><div class="k">Brugt indtil nu</div><div class="v" id="bSpent">8.500 kr</div></div>
+      <div class="spec"><div class="k">Brugt indtil nu</div><div class="v" id="bSpent" contenteditable="true" spellcheck="false" aria-label="Brugt indtil nu">8.500 kr</div></div>
       <div class="spec"><div class="k" id="bLeftLabel">Mangler før baghjul og dæk</div><div class="v" id="bLeft"></div></div>
       <div class="spec"><div class="k">Hele projektet (ca.)</div><div class="v" id="bTotal"></div></div>
     </div>
@@ -393,9 +396,10 @@ button.b:disabled{opacity:.5;cursor:default}
   </section>
 
   <section id="dele">
-    <div class="section-head"><div><p class="kicker">Indkøbsliste</p><h2>Dele der mangler</h2></div></div>
+    <div class="section-head"><div><p class="kicker">Indkøbsliste</p><h2>Dele der mangler</h2><p class="lead">Tryk på navn, pris eller note. Fluebenet er status. Det gemmes, så det kan ses på dine andre enheder.</p></div></div>
     <div class="parts" id="parts"></div>
     <div class="btns" style="margin-top:12px"><button class="b b3" type="button" id="addRow">+ Tilføj del</button></div>
+    <p class="status" id="buildStatus" role="status"></p>
   </section>
 
   <section>
@@ -425,10 +429,9 @@ button.b:disabled{opacity:.5;cursor:default}
   </section>
 
   <section>
-    <div class="section-head"><div><p class="kicker">På telefonen</p><h2>Kladde</h2><p class="lead">Kun på denne telefon. Den kommer med, når du eksporterer CSV.</p></div></div>
+    <div class="section-head"><div><p class="kicker">På projektet</p><h2>Kladde</h2><p class="lead">Gemmes med projektet, så den er der på dine andre enheder.</p></div></div>
     <textarea id="notes" placeholder="Ideer, links, hvad der er bestilt, hvad der mangler..."></textarea>
     <div class="btns" style="margin-top:12px">
-      <button class="b b1" type="button" id="csv">Eksportér til CSV</button>
       <button class="b b3" type="button" id="reset">Nulstil</button>
     </div>
   </section>
@@ -438,7 +441,7 @@ button.b:disabled{opacity:.5;cursor:default}
       <div>
         <p class="kicker">Til Ole</p>
         <h2>Noter</h2>
-        <p class="lead">Skriv en note og send den. Ole kan læse den bagefter, og de tidligere noter står her.</p>
+        <p class="lead">Skriv en note og send den. Tryk på noten eller ✎ Ret for at ændre den. Sletning skal bekræftes.</p>
       </div>
     </div>
     <div class="cards" id="noteList"></div>
@@ -507,7 +510,9 @@ button.b:disabled{opacity:.5;cursor:default}
 
 <script>
 const BUILD_KEY = "lucasScooterV2";
+const BUILD_CACHE = "lucas-scooter-build";
 const DRAFT_KEY = "lucas-scooter-note-draft";
+const BUILD_URL = "https://textdb.dev/api/data/lucas-scooter-build-3449af1d2eec57e985e6d91d5aa294e1";
 const NOTES_URL = "https://textdb.dev/api/data/lucas-scooter-ffe7f2de037d510cbb063f064505daac";
 const GALLERY_URL = "https://textdb.dev/api/data/lucas-scooter-galleri-133b84ce6396eaf0b7b3dab2584cdc5b";
 const DIARY_URL = "https://textdb.dev/api/data/lucas-scooter-dagbog-0f888566680e706ec29cc0cecc75e722";
@@ -558,22 +563,26 @@ function fresh() {
     spent: "8.500 kr"
   };
 }
-function loadBuild() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(BUILD_KEY) || "null");
-    if (!raw || !Array.isArray(raw.parts) || !Array.isArray(raw.specs)) return fresh();
-    return {
-      specs: raw.specs.slice(0, 40).map((row) => [String(row?.[0] ?? ""), String(row?.[1] ?? "")]),
-      owned: Array.isArray(raw.owned) ? raw.owned.slice(0, 80).map((item) => String(item)) : owned0.slice(),
-      parts: raw.parts.slice(0, 200).map((row) => [String(row?.[0] ?? ""), row?.[1] ?? "", row?.[2] ?? "", String(row?.[3] ?? ""), String(row?.[4] ?? ""), !!row?.[5]]),
-      notes: String(raw.notes ?? "").slice(0, 8000),
-      spent: String(raw.spent || "8.500 kr").slice(0, 40)
-    };
-  } catch {
-    return fresh();
-  }
+function cleanBuild(raw) {
+  const base = fresh();
+  if (!raw || typeof raw !== "object") return { ...base, ts: 0 };
+  return {
+    specs: Array.isArray(raw.specs) && raw.specs.length ? raw.specs.slice(0, 40).map((row) => [String(row?.[0] ?? ""), String(row?.[1] ?? "")]) : base.specs,
+    owned: Array.isArray(raw.owned) && raw.owned.length ? raw.owned.slice(0, 80).map((item) => String(item)) : base.owned,
+    parts: Array.isArray(raw.parts) && raw.parts.length ? raw.parts.slice(0, 200).map((row) => [String(row?.[0] ?? ""), row?.[1] ?? "", row?.[2] ?? "", String(row?.[3] ?? ""), String(row?.[4] ?? ""), !!row?.[5]]) : base.parts,
+    notes: String(raw.notes ?? "").slice(0, 8000),
+    spent: String(raw.spent || base.spent).slice(0, 40) || base.spent,
+    ts: Number(raw.ts) || 0
+  };
 }
-let st = loadBuild();
+function readCachedBuild() {
+  const cached = cleanBuild(readJson(BUILD_CACHE));
+  if (cached.ts) return cached;
+  const legacy = readJson(BUILD_KEY);
+  if (legacy && Array.isArray(legacy.parts)) return cleanBuild(legacy);
+  return cached;
+}
+let st = readCachedBuild();
 
 function priceText(value) {
   if (value === "" || value == null) return "";
@@ -624,7 +633,7 @@ function stats() {
   $("pDone").textContent = done + "/" + st.parts.length;
   $("pLeft").textContent = Math.round(min).toLocaleString("da-DK");
   $("pDays").textContent = String(days);
-  $("bSpent").textContent = st.spent;
+  if (document.activeElement !== $("bSpent")) $("bSpent").textContent = st.spent;
   $("bLeft").textContent = fmt(min) + " – " + fmt(max);
   $("bLeftLabel").textContent = missingPriceNote().includes("baghjul") ? "Mangler før baghjul og dæk" : "Mangler (min-max)";
   $("bTotal").textContent = fmt(spent + min + boughtMin) + " – " + fmt(spent + max + boughtMin);
@@ -634,7 +643,82 @@ function stats() {
   $("dlTxt").textContent = days === 0 ? "Sæsonen er i gang. Let's go!" : days + " dage tilbage. Let's go!";
   $("watchStatus").textContent = watchText();
 }
-function save() { localStorage.setItem(BUILD_KEY, JSON.stringify(st)); stats(); }
+function setBuildStatus(text, kind) {
+  const node = $("buildStatus");
+  node.textContent = text;
+  node.className = "status" + (kind ? " " + kind : "");
+}
+function editingBuild() {
+  const el = document.activeElement;
+  if (!el) return false;
+  if (el.id === "notes" || el.id === "bSpent") return true;
+  return !!el.isContentEditable && !!(el.closest("#parts") || el.closest("#specs"));
+}
+let buildTimer = 0;
+let buildChain = Promise.resolve();
+function save() {
+  st.ts = Date.now();
+  localStorage.setItem(BUILD_CACHE, JSON.stringify(st));
+  stats();
+  setBuildStatus("Gemmer…", "");
+  clearTimeout(buildTimer);
+  buildTimer = setTimeout(() => {
+    buildChain = buildChain.then(() => pushBuild()).catch(() => setBuildStatus("Ikke gemt endnu. Tjek nettet.", "err"));
+  }, 400);
+}
+async function fetchBuild() {
+  const response = await fetch(BUILD_URL + "?_=" + Date.now(), { cache: "no-store" });
+  if (response.status === 404) return cleanBuild(null);
+  if (!response.ok) throw new Error(String(response.status));
+  const text = await response.text();
+  if (!text.trim()) return cleanBuild(null);
+  let parsed = JSON.parse(text);
+  if (typeof parsed === "string") parsed = JSON.parse(parsed);
+  return cleanBuild(parsed);
+}
+async function pushBuild() {
+  const local = cleanBuild(readJson(BUILD_CACHE));
+  const remote = await fetchBuild();
+  if (remote.ts === local.ts) { setBuildStatus("Gemt", "ok"); return; }
+  const winner = remote.ts > local.ts ? remote : local;
+  const response = await fetch(BUILD_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({ v: 1, ...winner }),
+    cache: "no-store"
+  });
+  if (!response.ok) throw new Error(String(response.status));
+  const check = await fetchBuild();
+  if (check.ts < winner.ts) throw new Error("sync");
+  if (!editingBuild()) {
+    st = check;
+    localStorage.setItem(BUILD_CACHE, JSON.stringify(st));
+    renderBuild();
+  }
+  setBuildStatus("Gemt", "ok");
+}
+async function loadBuildRemote() {
+  const local = readCachedBuild();
+  try {
+    const remote = await fetchBuild();
+    if (remote.ts > local.ts) {
+      st = remote;
+      localStorage.setItem(BUILD_CACHE, JSON.stringify(st));
+      if (!editingBuild()) renderBuild();
+      setBuildStatus("Gemt", "ok");
+      return;
+    }
+    st = local.ts ? local : fresh();
+    if (!st.ts) st.ts = Date.now();
+    localStorage.setItem(BUILD_CACHE, JSON.stringify(st));
+    if (!editingBuild()) renderBuild();
+    await pushBuild();
+  } catch {
+    st = local.ts ? local : fresh();
+    if (!editingBuild()) renderBuild();
+    setBuildStatus("Kunne ikke hente projektet. Viser det, der ligger på telefonen.", "err");
+  }
+}
 
 function renderSpecs() {
   const root = $("specs");
@@ -741,27 +825,8 @@ function renderBuild() {
   renderSpecs();
   renderOwned();
   renderParts();
-  $("notes").value = st.notes;
+  if (document.activeElement !== $("notes")) $("notes").value = st.notes;
   stats();
-}
-
-function csvField(value) { return '"' + String(value ?? "").replace(/"/g, '""') + '"'; }
-function exportCSV() {
-  let csv = "\ufeffKøbt;Del;Pris min (kr);Pris max (kr);Note;Fundet pris / link\n";
-  st.parts.forEach((part) => { csv += [part[5] ? "ja" : "nej", part[0], part[1], part[2], part[4], part[3]].map(csvField).join(";") + "\n"; });
-  csv += "\nSpecs\n";
-  st.specs.forEach((spec) => { csv += csvField(spec[0]) + ";" + csvField(spec[1]) + "\n"; });
-  csv += "\nAllerede ejet;" + csvField(st.owned.join(", ")) + "\nBrugt indtil nu;" + csvField(st.spent) + "\n\nKladde;" + csvField(st.notes) + "\n\nSendte noter\nDato;Hvem;Note\n";
-  noteStore.get().notes.forEach((note) => {
-    csv += [note.ts ? new Date(note.ts).toLocaleString("da-DK") : "", note.who, note.text].map(csvField).join(";") + "\n";
-  });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-  link.download = "lucas-scooter.csv";
-  document.body.append(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(link.href), 1500);
 }
 
 function emptyBox(title, text) {
@@ -874,8 +939,9 @@ function cleanNotes(raw) {
     if (!item || typeof item !== "object") return null;
     const id = String(item.id || "").trim().slice(0, 40);
     const text = String(item.text || "").trim().slice(0, 2000);
-    if (!id || !text) return null;
-    return { id, text, who: String(item.who || "Lucas").trim().slice(0, 40) || "Lucas", ts: Number(item.ts) || 0 };
+    const del = !!item.del;
+    if (!id || (!del && !text)) return null;
+    return { id, text, who: String(item.who || "Lucas").trim().slice(0, 40) || "Lucas", ts: Number(item.ts) || 0, del };
   });
 }
 function cleanPosts(raw) {
@@ -1105,6 +1171,170 @@ function attachPhoto(button, id, alt) {
   }).catch(() => {});
 }
 
+let inline = null;
+function beginInline(kind, record) {
+  if (inline?.previewUrl) URL.revokeObjectURL(inline.previewUrl);
+  inline = { kind, id: record.id, date: record.date || cphISO(), title: record.title || "", text: record.text || "", pending: null, previewUrl: "", status: "", busy: false };
+  if (kind === "gallery") renderGallery();
+  else if (kind === "diary") renderDiary();
+  else renderNotes();
+  const focus = document.querySelector(".inline-edit textarea");
+  if (focus) focus.focus();
+}
+function cancelInline() {
+  if (inline?.previewUrl) URL.revokeObjectURL(inline.previewUrl);
+  const kind = inline?.kind;
+  inline = null;
+  if (kind === "gallery") renderGallery();
+  else if (kind === "diary") renderDiary();
+  else if (kind === "note") renderNotes();
+}
+function paintInlineStatus() {
+  const node = document.querySelector(".inline-status");
+  if (node && inline) node.textContent = inline.status || "";
+}
+async function takeInlineFile(file) {
+  if (!inline) return;
+  inline.status = "Gør billedet klar…";
+  paintInlineStatus();
+  try {
+    const packed = await compressFile(file);
+    if (!inline) return;
+    if (inline.previewUrl) URL.revokeObjectURL(inline.previewUrl);
+    inline.pending = packed;
+    inline.previewUrl = URL.createObjectURL(packed.blob);
+    inline.status = "Nyt billede klar · " + formatBytes(packed.blob.size);
+    const box = document.querySelector(".inline-preview");
+    if (box) {
+      box.hidden = false;
+      box.replaceChildren();
+      const img = document.createElement("img");
+      img.src = inline.previewUrl;
+      img.alt = "Nyt billede";
+      box.append(img);
+    }
+  } catch (error) {
+    if (inline) inline.status = error instanceof Error ? error.message : "Billedet kunne ikke bruges.";
+  }
+  paintInlineStatus();
+}
+function editorFields(kind) {
+  const box = document.createElement("div");
+  box.className = "inline-edit";
+  if (kind !== "note") {
+    const dateLabel = document.createElement("label");
+    dateLabel.className = "field";
+    dateLabel.append("Dato");
+    const date = document.createElement("input");
+    date.type = "date";
+    date.value = inline.date;
+    date.addEventListener("input", () => { inline.date = date.value; });
+    dateLabel.append(date);
+    box.append(dateLabel);
+  }
+  if (kind === "diary") {
+    const titleLabel = document.createElement("label");
+    titleLabel.className = "field";
+    titleLabel.append("Titel");
+    const title = document.createElement("input");
+    title.type = "text";
+    title.maxLength = 80;
+    title.value = inline.title;
+    title.placeholder = "Valgfri";
+    title.addEventListener("input", () => { inline.title = title.value; });
+    titleLabel.append(title);
+    box.append(titleLabel);
+  }
+  const textLabel = document.createElement("label");
+  textLabel.className = "field";
+  textLabel.append(kind === "gallery" ? "Hvad har du lavet?" : "Tekst");
+  const text = document.createElement("textarea");
+  text.maxLength = kind === "gallery" ? 400 : kind === "note" ? 2000 : 4000;
+  text.value = inline.text;
+  text.addEventListener("input", () => { inline.text = text.value; });
+  textLabel.append(text);
+  box.append(textLabel);
+  if (kind !== "note") {
+    const uploads = document.createElement("div");
+    uploads.className = "uploads";
+    [["Tag nyt billede", "environment"], ["Bibliotek", ""]].forEach(([label, capture]) => {
+      const lab = document.createElement("label");
+      lab.className = "filebtn";
+      lab.append(label);
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      if (capture) input.setAttribute("capture", capture);
+      input.addEventListener("change", () => { const file = input.files?.[0]; if (file) takeInlineFile(file); });
+      lab.append(input);
+      uploads.append(lab);
+    });
+    const preview = document.createElement("div");
+    preview.className = "preview inline-preview";
+    preview.hidden = !inline.previewUrl;
+    if (inline.previewUrl) {
+      const img = document.createElement("img");
+      img.src = inline.previewUrl;
+      img.alt = "Nyt billede";
+      preview.append(img);
+    }
+    box.append(uploads, preview);
+  }
+  const status = document.createElement("p");
+  status.className = "status inline-status";
+  status.textContent = inline.status || "";
+  const actions = document.createElement("div");
+  actions.className = "btns";
+  const save = document.createElement("button");
+  save.type = "button";
+  save.className = "b b1";
+  save.textContent = "Gem";
+  save.addEventListener("click", () => commitInline());
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.className = "b b3";
+  cancel.textContent = "Annuller";
+  cancel.addEventListener("click", cancelInline);
+  actions.append(save, cancel);
+  box.append(status, actions);
+  return box;
+}
+async function commitInline() {
+  if (!inline || inline.busy) return;
+  const current = inline;
+  const limit = current.kind === "gallery" ? 400 : current.kind === "note" ? 2000 : 4000;
+  const text = current.text.trim().slice(0, limit);
+  if (!text) { current.status = "Skriv noget, før du gemmer."; paintInlineStatus(); return; }
+  if (current.kind !== "note" && !/^\d{4}-\d{2}-\d{2}$/.test(current.date)) { current.status = "Vælg en dato."; paintInlineStatus(); return; }
+  current.busy = true;
+  current.status = current.pending ? "Lægger billedet op…" : "Gemmer…";
+  paintInlineStatus();
+  try {
+    if (current.kind === "note") {
+      await noteStore.change((state) => ({ notes: state.notes.map((item) => item.id === current.id ? { ...item, text, ts: Date.now(), del: false } : item) }));
+      inline = null;
+      renderNotes();
+      return;
+    }
+    const store = current.kind === "diary" ? diaryStore : galleryStore;
+    const field = current.kind === "diary" ? "entries" : "posts";
+    const existing = store.get()[field].find((item) => item.id === current.id);
+    let image = existing?.image || "";
+    if (current.pending) {
+      await putImage(current.id, current.pending.dataUrl);
+      image = current.id;
+    }
+    const record = { id: current.id, date: current.date, text, image, who: "Lucas", ts: Date.now(), del: false };
+    if (current.kind === "diary") record.title = current.title.trim().slice(0, 80);
+    await store.change((state) => ({ [field]: [...state[field].filter((item) => item.id !== current.id), record] }));
+    if (current.previewUrl) URL.revokeObjectURL(current.previewUrl);
+    inline = null;
+    if (current.kind === "diary") renderDiary();
+    else renderGallery();
+  } catch {
+    if (inline) { inline.busy = false; inline.status = "Det blev ikke gemt. Tjek nettet, og prøv igen."; paintInlineStatus(); }
+  }
+}
 function renderGallery() {
   const posts = byNewest(visible(galleryStore.get().posts));
   $("galleryMeta").textContent = posts.length ? posts.length + (posts.length === 1 ? " billede" : " billeder") : "";
@@ -1115,6 +1345,7 @@ function renderGallery() {
     return;
   }
   posts.forEach((post) => {
+    const editing = inline?.kind === "gallery" && inline.id === post.id;
     const card = document.createElement("article");
     card.className = "gcard";
     const shot = document.createElement("button");
@@ -1125,25 +1356,36 @@ function renderGallery() {
     attachPhoto(shot, post.image, post.text);
     const body = document.createElement("div");
     body.className = "gbody";
-    const time = document.createElement("time");
-    time.dateTime = post.date;
-    time.textContent = showDate(post.date) || "Uden dato";
-    const text = document.createElement("p");
-    text.textContent = post.text;
+    if (editing) body.append(editorFields("gallery"));
+    else {
+      const time = document.createElement("time");
+      time.dateTime = post.date;
+      time.className = "tap-edit";
+      time.textContent = showDate(post.date) || "Uden dato";
+      time.addEventListener("click", () => beginInline("gallery", post));
+      const text = document.createElement("p");
+      text.className = "tap-edit";
+      text.textContent = post.text;
+      text.addEventListener("click", () => beginInline("gallery", post));
+      body.append(time, text);
+    }
     const actions = document.createElement("div");
     actions.className = "row-actions";
-    const edit = document.createElement("button");
-    edit.type = "button";
-    edit.className = "textbtn";
-    edit.textContent = "Ret";
-    edit.addEventListener("click", () => openSheet("gallery", post));
+    if (!editing) {
+      const edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "textbtn";
+      edit.textContent = "✎ Ret";
+      edit.addEventListener("click", () => beginInline("gallery", post));
+      actions.append(edit);
+    }
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "textbtn danger";
     remove.textContent = "Slet";
     remove.addEventListener("click", () => removePost(post));
-    actions.append(edit, remove);
-    body.append(time, text, actions);
+    actions.append(remove);
+    body.append(actions);
     card.append(shot, body);
     root.append(card);
   });
@@ -1158,21 +1400,30 @@ function renderDiary() {
     return;
   }
   entries.forEach((entry) => {
+    const editing = inline?.kind === "diary" && inline.id === entry.id;
     const card = document.createElement("article");
     card.className = "entry";
-    const time = document.createElement("time");
-    time.dateTime = entry.date;
-    time.textContent = showDate(entry.date) || "Uden dato";
-    card.append(time);
-    if (entry.title) {
-      const title = document.createElement("h3");
-      title.textContent = entry.title;
-      card.append(title);
+    if (editing) card.append(editorFields("diary"));
+    else {
+      const time = document.createElement("time");
+      time.dateTime = entry.date;
+      time.className = "tap-edit";
+      time.textContent = showDate(entry.date) || "Uden dato";
+      time.addEventListener("click", () => beginInline("diary", entry));
+      card.append(time);
+      if (entry.title) {
+        const title = document.createElement("h3");
+        title.className = "tap-edit";
+        title.textContent = entry.title;
+        title.addEventListener("click", () => beginInline("diary", entry));
+        card.append(title);
+      }
+      const body = document.createElement("p");
+      body.className = "body tap-edit";
+      body.textContent = entry.text;
+      body.addEventListener("click", () => beginInline("diary", entry));
+      card.append(body);
     }
-    const body = document.createElement("p");
-    body.className = "body";
-    body.textContent = entry.text;
-    card.append(body);
     if (entry.image) {
       const thumb = document.createElement("button");
       thumb.type = "button";
@@ -1184,23 +1435,36 @@ function renderDiary() {
     }
     const actions = document.createElement("div");
     actions.className = "row-actions";
-    const edit = document.createElement("button");
-    edit.type = "button";
-    edit.className = "textbtn";
-    edit.textContent = "Ret";
-    edit.addEventListener("click", () => openSheet("diary", entry));
+    if (!editing) {
+      const edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "textbtn";
+      edit.textContent = "✎ Ret";
+      edit.addEventListener("click", () => beginInline("diary", entry));
+      actions.append(edit);
+    }
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "textbtn danger";
     remove.textContent = "Slet";
     remove.addEventListener("click", () => removeEntry(entry));
-    actions.append(edit, remove);
+    actions.append(remove);
     card.append(actions);
     root.append(card);
   });
 }
+async function removeNote(note) {
+  if (!(await ask("Slet denne note?"))) return;
+  try {
+    await noteStore.change((state) => ({ notes: state.notes.map((item) => item.id === note.id ? { ...item, del: true, ts: Date.now() } : item) }));
+    if (inline?.id === note.id) inline = null;
+    renderNotes();
+  } catch {
+    setNoteStatus("Noten blev ikke slettet. Prøv igen.", "err");
+  }
+}
 function renderNotes() {
-  const notes = [...noteStore.get().notes].reverse();
+  const notes = [...visible(noteStore.get().notes)].reverse();
   const root = $("noteList");
   root.replaceChildren();
   if (!notes.length) {
@@ -1208,16 +1472,39 @@ function renderNotes() {
     return;
   }
   notes.forEach((note) => {
+    const editing = inline?.kind === "note" && inline.id === note.id;
     const card = document.createElement("article");
     card.className = "fcard";
     card.style.borderLeftColor = "var(--acc2)";
-    const text = document.createElement("p");
-    text.textContent = note.text;
+    if (editing) card.append(editorFields("note"));
+    else {
+      const text = document.createElement("p");
+      text.className = "tap-edit";
+      text.textContent = note.text;
+      text.addEventListener("click", () => beginInline("note", note));
+      card.append(text);
+    }
     const when = document.createElement("div");
     when.className = "when";
     const stamp = note.ts ? new Date(note.ts).toLocaleString("da-DK", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
     when.textContent = [note.who || "Lucas", stamp].filter(Boolean).join(" · ");
-    card.append(text, when);
+    const actions = document.createElement("div");
+    actions.className = "row-actions";
+    if (!editing) {
+      const edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "textbtn";
+      edit.textContent = "✎ Ret";
+      edit.addEventListener("click", () => beginInline("note", note));
+      actions.append(edit);
+    }
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "textbtn danger";
+    remove.textContent = "Slet";
+    remove.addEventListener("click", () => removeNote(note));
+    actions.append(remove);
+    card.append(when, actions);
     root.append(card);
   });
 }
@@ -1374,6 +1661,7 @@ async function saveSheet(event) {
 }
 async function removePost(post) {
   if (!(await ask("Slet dette billede fra galleriet? Det kan ikke fortrydes."))) return;
+  if (inline?.id === post.id) cancelInline();
   try {
     await galleryStore.change((state) => ({ posts: state.posts.map((item) => item.id === post.id ? { ...item, del: true, ts: Date.now() } : item) }));
     await clearImage(post.image);
@@ -1384,6 +1672,7 @@ async function removePost(post) {
 }
 async function removeEntry(entry) {
   if (!(await ask("Slet dette indlæg? Billedet bliver også væk."))) return;
+  if (inline?.id === entry.id) cancelInline();
   try {
     await diaryStore.change((state) => ({ entries: state.entries.map((item) => item.id === entry.id ? { ...item, del: true, ts: Date.now() } : item) }));
     await clearImage(entry.image);
@@ -1447,12 +1736,15 @@ $("addRow").addEventListener("click", () => {
   if (last) last.focus();
 });
 $("notes").addEventListener("input", () => { st.notes = $("notes").value; save(); });
-$("csv").addEventListener("click", exportCSV);
+$("bSpent").addEventListener("input", () => { st.spent = $("bSpent").textContent.trim().slice(0, 40) || "0 kr"; save(); });
 $("reset").addEventListener("click", async () => {
-  if (!(await ask("Nulstil til startlisten? Kladde og flueben på denne telefon slettes. Sendte noter bliver liggende."))) return;
+  if (!(await ask("Nulstil til startlisten? Priser, flueben og kladde nulstilles på alle enheder. Noter, galleri og dagbog bliver liggende."))) return;
   localStorage.removeItem(BUILD_KEY);
   st = fresh();
+  st.ts = Date.now();
+  localStorage.setItem(BUILD_CACHE, JSON.stringify(st));
   renderBuild();
+  try { await pushBuild(); } catch { setBuildStatus("Nulstillingen er på telefonen, men ikke gemt endnu.", "err"); }
 });
 $("noteInput").value = localStorage.getItem(DRAFT_KEY) || "";
 $("noteInput").addEventListener("input", () => localStorage.setItem(DRAFT_KEY, $("noteInput").value));
@@ -1494,25 +1786,27 @@ renderGallery();
 renderDiary();
 renderNotes();
 loadFund();
-galleryStore.load().then(renderGallery).catch(() => {
-  renderGallery();
+loadBuildRemote();
+galleryStore.load().then(() => { if (inline?.kind !== "gallery") renderGallery(); }).catch(() => {
+  if (inline?.kind !== "gallery") renderGallery();
   $("gallery").prepend(emptyBox("Kunne ikke hente galleriet", "Viser det, der ligger på telefonen, hvis der er noget."));
 });
-diaryStore.load().then(renderDiary).catch(() => renderDiary());
+diaryStore.load().then(() => { if (inline?.kind !== "diary") renderDiary(); }).catch(() => { if (inline?.kind !== "diary") renderDiary(); });
 noteStore.load().then(() => {
-  renderNotes();
+  if (inline?.kind !== "note") renderNotes();
   if ($("noteStatus").classList.contains("err")) setNoteStatus("", "");
 }).catch(() => {
-  renderNotes();
+  if (inline?.kind !== "note") renderNotes();
   setNoteStatus("Kunne ikke hente noterne lige nu. Viser dem, der ligger på telefonen.", "err");
 });
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
   stats();
   loadFund();
-  galleryStore.load().then(renderGallery).catch(() => {});
-  diaryStore.load().then(renderDiary).catch(() => {});
-  noteStore.load().then(renderNotes).catch(() => {});
+  if (!editingBuild()) loadBuildRemote();
+  galleryStore.load().then(() => { if (inline?.kind !== "gallery") renderGallery(); }).catch(() => {});
+  diaryStore.load().then(() => { if (inline?.kind !== "diary") renderDiary(); }).catch(() => {});
+  noteStore.load().then(() => { if (inline?.kind !== "note") renderNotes(); }).catch(() => {});
 });
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
