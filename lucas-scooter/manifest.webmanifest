@@ -1,0 +1,32 @@
+{
+  "name": "Lucas Scooter",
+  "short_name": "Lucas Scooter",
+  "description": "Gilera Runner-build til sæsonstart i maj 2027.",
+  "id": "/lucas-scooter/",
+  "start_url": "/lucas-scooter/",
+  "scope": "/lucas-scooter/",
+  "display": "standalone",
+  "background_color": "#07080c",
+  "theme_color": "#07080c",
+  "lang": "da",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
