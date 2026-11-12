@@ -1,5 +1,5 @@
-/* App shell only. Notes, gallery, diary, images and fund.json stay uncached. */
-const CACHE = "lucas-scooter-shell-v2";
+/* App shell only. Notes, build, gallery, diary, images and fund.json stay uncached. */
+const CACHE = "lucas-scooter-shell-v3";
 const SHELL = [
   "/lucas-scooter/",
   "/lucas-scooter/index.html",
