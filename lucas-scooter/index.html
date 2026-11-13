@@ -228,6 +228,8 @@ h2:before{content:"";width:7px;height:.72em;border-radius:4px;background:var(--a
 .textbtn:hover,.textbtn:focus-visible{background:rgba(255,255,255,.05);color:#fff}
 .inline-edit{margin-top:8px}
 .tap-edit{cursor:pointer}
+.tip{margin:16px 0 0;padding:14px 16px;border-radius:18px;background:linear-gradient(100deg,rgba(58,209,255,.12),rgba(255,204,0,.08));border:1px solid rgba(255,255,255,.1);color:var(--mut);font-size:14px;line-height:1.5}
+.tip b{color:var(--acc2);letter-spacing:.04em}
 #bSpent{border-bottom:1px dashed rgba(255,255,255,.28);outline:none}
 .empty{
   background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.16);
@@ -439,18 +441,28 @@ button.b:disabled{opacity:.5;cursor:default}
   <section id="noter">
     <div class="section-head">
       <div>
-        <p class="kicker">Til Ole</p>
+        <p class="kicker">Projektnote</p>
         <h2>Noter</h2>
-        <p class="lead">Skriv en note og send den. Tryk på noten eller ✎ Ret for at ændre den. Sletning skal bekræftes.</p>
+        <p class="lead">Skriv en projektnote og gem den. Tryk på teksten eller ✎ Ret for at ændre den. Et billede er valgfrit. Sletning skal bekræftes.</p>
       </div>
     </div>
     <div class="cards" id="noteList"></div>
     <form id="noteForm" style="margin-top:12px">
-      <label class="sr" for="noteInput">Note til Ole</label>
-      <textarea id="noteInput" maxlength="2000" placeholder="Skriv en note eller et input..."></textarea>
-      <div class="btns" style="margin-top:12px"><button class="b b2 wide" type="submit" id="sendNote">Send note</button></div>
+      <label class="sr" for="noteInput">Projektnote</label>
+      <textarea id="noteInput" maxlength="2000" placeholder="Skriv en projektnote..."></textarea>
+      <div class="uploads">
+        <label class="filebtn">Tag billede
+          <input id="noteCamera" type="file" accept="image/*" capture="environment">
+        </label>
+        <label class="filebtn">Bibliotek
+          <input id="noteLibrary" type="file" accept="image/*">
+        </label>
+      </div>
+      <div class="preview" id="notePreview" hidden></div>
+      <div class="btns"><button class="b b2 wide" type="submit" id="sendNote">Gem projektnote</button></div>
       <p class="status" id="noteStatus" role="status"></p>
     </form>
+    <p class="tip"><b>Tip:</b> Du kan også lægge et billede på en note. Har du fx fundet en tank eller en anden del, så tag et foto og gem det sammen med noten. Så kan du senere se, om den skal bruges.</p>
   </section>
 
   <p class="ios-hint" id="iosHint">På iPhone: tryk Del, og vælg Føj til hjemmeskærm. Så ligger Lucas Scooter som en app.</p>
@@ -941,7 +953,8 @@ function cleanNotes(raw) {
     const text = String(item.text || "").trim().slice(0, 2000);
     const del = !!item.del;
     if (!id || (!del && !text)) return null;
-    return { id, text, who: String(item.who || "Lucas").trim().slice(0, 40) || "Lucas", ts: Number(item.ts) || 0, del };
+    const image = String(item.image || "").trim().slice(0, 40);
+    return { id, text, image: idOk(image) ? image : "", who: String(item.who || "Lucas").trim().slice(0, 40) || "Lucas", ts: Number(item.ts) || 0, del };
   });
 }
 function cleanPosts(raw) {
@@ -1174,7 +1187,7 @@ function attachPhoto(button, id, alt) {
 let inline = null;
 function beginInline(kind, record) {
   if (inline?.previewUrl) URL.revokeObjectURL(inline.previewUrl);
-  inline = { kind, id: record.id, date: record.date || cphISO(), title: record.title || "", text: record.text || "", pending: null, previewUrl: "", status: "", busy: false };
+  inline = { kind, id: record.id, date: record.date || cphISO(), title: record.title || "", text: record.text || "", image: record.image || "", removeImage: false, pending: null, previewUrl: "", status: "", busy: false };
   if (kind === "gallery") renderGallery();
   else if (kind === "diary") renderDiary();
   else renderNotes();
@@ -1254,31 +1267,52 @@ function editorFields(kind) {
   text.addEventListener("input", () => { inline.text = text.value; });
   textLabel.append(text);
   box.append(textLabel);
-  if (kind !== "note") {
-    const uploads = document.createElement("div");
-    uploads.className = "uploads";
-    [["Tag nyt billede", "environment"], ["Bibliotek", ""]].forEach(([label, capture]) => {
-      const lab = document.createElement("label");
-      lab.className = "filebtn";
-      lab.append(label);
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = "image/*";
-      if (capture) input.setAttribute("capture", capture);
-      input.addEventListener("change", () => { const file = input.files?.[0]; if (file) takeInlineFile(file); });
-      lab.append(input);
-      uploads.append(lab);
+  const uploads = document.createElement("div");
+  uploads.className = "uploads";
+  [["Tag nyt billede", "environment"], ["Bibliotek", ""]].forEach(([label, capture]) => {
+    const lab = document.createElement("label");
+    lab.className = "filebtn";
+    lab.append(label);
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    if (capture) input.setAttribute("capture", capture);
+    input.addEventListener("change", () => { const file = input.files?.[0]; if (file) takeInlineFile(file); });
+    lab.append(input);
+    uploads.append(lab);
+  });
+  const preview = document.createElement("div");
+  preview.className = "preview inline-preview";
+  preview.hidden = !inline.previewUrl;
+  if (inline.previewUrl) {
+    const img = document.createElement("img");
+    img.src = inline.previewUrl;
+    img.alt = "Nyt billede";
+    preview.append(img);
+  }
+  box.append(uploads, preview);
+  if (kind === "note" && inline.image && !inline.removeImage && !inline.previewUrl) {
+    const current = document.createElement("button");
+    current.type = "button";
+    current.className = "thumb";
+    current.setAttribute("aria-label", "Nuværende billede");
+    current.addEventListener("click", () => openLightbox(inline.image, inline.text, ""));
+    attachPhoto(current, inline.image, inline.text || "Projektnote");
+    box.append(current);
+  }
+  if (kind === "note" && ((inline.image && !inline.removeImage) || inline.previewUrl)) {
+    const drop = document.createElement("button");
+    drop.type = "button";
+    drop.className = "textbtn danger";
+    drop.textContent = "Fjern billede";
+    drop.addEventListener("click", () => {
+      if (inline.previewUrl) URL.revokeObjectURL(inline.previewUrl);
+      inline.previewUrl = "";
+      inline.pending = null;
+      inline.removeImage = true;
+      renderNotes();
     });
-    const preview = document.createElement("div");
-    preview.className = "preview inline-preview";
-    preview.hidden = !inline.previewUrl;
-    if (inline.previewUrl) {
-      const img = document.createElement("img");
-      img.src = inline.previewUrl;
-      img.alt = "Nyt billede";
-      preview.append(img);
-    }
-    box.append(uploads, preview);
+    box.append(drop);
   }
   const status = document.createElement("p");
   status.className = "status inline-status";
@@ -1311,7 +1345,18 @@ async function commitInline() {
   paintInlineStatus();
   try {
     if (current.kind === "note") {
-      await noteStore.change((state) => ({ notes: state.notes.map((item) => item.id === current.id ? { ...item, text, ts: Date.now(), del: false } : item) }));
+      const existing = noteStore.get().notes.find((item) => item.id === current.id);
+      let image = existing?.image || "";
+      if (current.pending) {
+        if (image && image !== current.id) await clearImage(image);
+        await putImage(current.id, current.pending.dataUrl);
+        image = current.id;
+      } else if (current.removeImage) {
+        if (image) await clearImage(image);
+        image = "";
+      }
+      await noteStore.change((state) => ({ notes: state.notes.map((item) => item.id === current.id ? { ...item, text, image, ts: Date.now(), del: false } : item) }));
+      if (current.previewUrl) URL.revokeObjectURL(current.previewUrl);
       inline = null;
       renderNotes();
       return;
@@ -1454,13 +1499,14 @@ function renderDiary() {
   });
 }
 async function removeNote(note) {
-  if (!(await ask("Slet denne note?"))) return;
+  if (!(await ask("Slet denne projektnote?"))) return;
   try {
     await noteStore.change((state) => ({ notes: state.notes.map((item) => item.id === note.id ? { ...item, del: true, ts: Date.now() } : item) }));
+    if (note.image) await clearImage(note.image);
     if (inline?.id === note.id) inline = null;
     renderNotes();
   } catch {
-    setNoteStatus("Noten blev ikke slettet. Prøv igen.", "err");
+    setNoteStatus("Projektnoten blev ikke slettet. Prøv igen.", "err");
   }
 }
 function renderNotes() {
@@ -1468,7 +1514,7 @@ function renderNotes() {
   const root = $("noteList");
   root.replaceChildren();
   if (!notes.length) {
-    root.append(emptyBox("Ingen noter endnu", "Skriv den første herunder. Ole kan læse den bagefter."));
+    root.append(emptyBox("Ingen projektnoter endnu", "Skriv den første herunder. Den gemmes, så du kan se den igen."));
     return;
   }
   notes.forEach((note) => {
@@ -1483,6 +1529,15 @@ function renderNotes() {
       text.textContent = note.text;
       text.addEventListener("click", () => beginInline("note", note));
       card.append(text);
+      if (note.image) {
+        const thumb = document.createElement("button");
+        thumb.type = "button";
+        thumb.className = "thumb";
+        thumb.setAttribute("aria-label", "Vis billede");
+        thumb.addEventListener("click", () => openLightbox(note.image, note.text, ""));
+        attachPhoto(thumb, note.image, note.text || "Projektnote");
+        card.append(thumb);
+      }
     }
     const when = document.createElement("div");
     when.className = "when";
@@ -1711,17 +1766,60 @@ function setNoteStatus(text, kind) {
   node.textContent = text;
   node.className = "status" + (kind ? " " + kind : "");
 }
+let noteDraftImage = null;
+let noteDraftPreview = "";
+function clearNoteDraftImage() {
+  noteDraftImage = null;
+  if (noteDraftPreview) URL.revokeObjectURL(noteDraftPreview);
+  noteDraftPreview = "";
+  $("notePreview").hidden = true;
+  $("notePreview").replaceChildren();
+  $("noteCamera").value = "";
+  $("noteLibrary").value = "";
+}
+async function takeNoteFile(file) {
+  setNoteStatus("Gør billedet klar…", "");
+  try {
+    const packed = await compressFile(file);
+    noteDraftImage = packed;
+    if (noteDraftPreview) URL.revokeObjectURL(noteDraftPreview);
+    noteDraftPreview = URL.createObjectURL(packed.blob);
+    const box = $("notePreview");
+    box.hidden = false;
+    box.replaceChildren();
+    const img = document.createElement("img");
+    img.src = noteDraftPreview;
+    img.alt = "Billede til projektnoten";
+    const small = document.createElement("small");
+    small.textContent = "Klar · " + formatBytes(packed.blob.size);
+    box.append(img, small);
+    setNoteStatus("", "");
+  } catch (error) {
+    noteDraftImage = null;
+    setNoteStatus(error instanceof Error ? error.message : "Billedet kunne ikke bruges.", "err");
+  } finally {
+    $("noteCamera").value = "";
+    $("noteLibrary").value = "";
+  }
+}
 async function sendNote(text) {
   $("sendNote").disabled = true;
-  setNoteStatus("Sender…", "");
+  setNoteStatus(noteDraftImage ? "Lægger billedet op…" : "Gemmer…", "");
   try {
-    await noteStore.change((state) => ({ notes: [...state.notes, { id: newId(), text, who: "Lucas", ts: Date.now() }] }));
+    const id = newId();
+    let image = "";
+    if (noteDraftImage) {
+      await putImage(id, noteDraftImage.dataUrl);
+      image = id;
+    }
+    await noteStore.change((state) => ({ notes: [...state.notes, { id, text, image, who: "Lucas", ts: Date.now(), del: false }] }));
     $("noteInput").value = "";
     localStorage.removeItem(DRAFT_KEY);
+    clearNoteDraftImage();
     renderNotes();
-    setNoteStatus("Sendt. Ole kan læse den.", "ok");
+    setNoteStatus("Gemt.", "ok");
   } catch {
-    setNoteStatus("Noten ligger på telefonen og sendes, når der er net.", "err");
+    setNoteStatus("Projektnoten ligger på telefonen og gemmes, når der er net.", "err");
   } finally {
     $("sendNote").disabled = false;
   }
@@ -1748,6 +1846,8 @@ $("reset").addEventListener("click", async () => {
 });
 $("noteInput").value = localStorage.getItem(DRAFT_KEY) || "";
 $("noteInput").addEventListener("input", () => localStorage.setItem(DRAFT_KEY, $("noteInput").value));
+$("noteCamera").addEventListener("change", () => { const file = $("noteCamera").files?.[0]; if (file) takeNoteFile(file); });
+$("noteLibrary").addEventListener("change", () => { const file = $("noteLibrary").files?.[0]; if (file) takeNoteFile(file); });
 $("noteForm").addEventListener("submit", (event) => {
   event.preventDefault();
   const text = $("noteInput").value.trim().slice(0, 2000);
