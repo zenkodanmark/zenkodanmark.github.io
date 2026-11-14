@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07080c">
+<meta name="color-scheme" content="dark">
+<meta name="format-detection" content="telephone=no">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lucas Scooter">
+<title>Prisvagt · Lucas scooter</title>
+<link rel="manifest" href="/lucas-scooter/manifest.webmanifest">
+<link rel="icon" href="/lucas-scooter/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/lucas-scooter/apple-touch-icon.png" sizes="180x180">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07080c;
+  --card:#12151c;
+  --card2:#181c26;
+  --line:rgba(255,255,255,.08);
+  --txt:#f4f6fb;
+  --mut:#b7c0d4;
+  --dim:#8b95ab;
+  --acc:#ff3b30;
+  --acc2:#ffcc00;
+  --ok:#3ee6a2;
+  --cy:#3ad1ff;
+  --shadow:0 16px 40px rgba(0,0,0,.28);
+  --radius:22px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html{background:var(--bg);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  margin:0;
+  color:var(--txt);
+  font-family:Inter,system-ui,-apple-system,sans-serif;
+  min-height:100vh;
+  min-height:100dvh;
+  background:
+    radial-gradient(900px 420px at 0% -10%, rgba(255,59,48,.22), transparent 55%),
+    radial-gradient(700px 380px at 110% 0%, rgba(32,195,255,.14), transparent 50%),
+    var(--bg);
+}
+:focus-visible{outline:2px solid var(--acc2);outline-offset:3px}
+a{color:var(--cy)}
+button,input,textarea,select{touch-action:manipulation}
+.wrap{
+  max-width:1080px;
+  margin:0 auto;
+  padding:
+    calc(14px + env(safe-area-inset-top))
+    calc(16px + env(safe-area-inset-right))
+    calc(48px + env(safe-area-inset-bottom))
+    calc(16px + env(safe-area-inset-left));
+}
+.hero{
+  position:relative;
+  overflow:hidden;
+  border-radius:28px;
+  padding:26px 18px 16px;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255,255,255,.2), transparent 40%),
+    linear-gradient(128deg, #ff4b3a 0%, #c41722 38%, #1a1020 78%, #10141c 100%);
+  box-shadow:0 24px 60px rgba(255,59,48,.22), inset 0 1px 0 rgba(255,255,255,.28);
+}
+.hero:after{
+  content:"";
+  position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(-52deg, rgba(255,255,255,.055) 0 10px, transparent 10px 22px);
+}
+.hero > *{position:relative;z-index:1}
+.tag{
+  display:inline-flex;align-items:center;gap:8px;
+  background:#07080c;color:var(--acc2);
+  font-weight:800;font-size:11px;letter-spacing:.22em;
+  padding:6px 11px;border-radius:999px;
+}
+.tag i{width:6px;height:6px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 4px rgba(255,59,48,.25)}
+h1{
+  font-family:"Bebas Neue",Impact,sans-serif;
+  font-size:clamp(64px,18vw,108px);
+  line-height:.82;letter-spacing:.5px;
+  margin:14px 0 8px;max-width:12ch;
+}
+.sub{margin:0;font-size:15px;line-height:1.4;color:rgba(255,255,255,.92);max-width:62ch}
+.back{display:inline-block;margin:0 0 14px;color:var(--cy);font-weight:600;text-decoration:none}
+.back:hover{text-decoration:underline}
+section{margin-top:34px;scroll-margin-top:16px}
+.section-head{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin-bottom:14px}
+.kicker{margin:0;color:var(--acc);font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase}
+h2{
+  font-family:"Bebas Neue",Impact,sans-serif;
+  font-size:clamp(36px,10vw,52px);
+  letter-spacing:.04em;line-height:.9;margin:2px 0 0;
+  display:flex;align-items:center;gap:10px;
+}
+h2:before{content:"";width:7px;height:.72em;border-radius:4px;background:var(--acc);flex:none}
+h3{
+  margin:22px 0 10px;
+  color:var(--acc2);
+  font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+}
+.lead{margin:8px 0 0;color:var(--mut);font-size:15px;line-height:1.5;max-width:62ch}
+.day{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:18px 16px 16px;
+  box-shadow:var(--shadow);
+}
+.cards{display:grid;gap:10px}
+.fcard{
+  background:var(--card2);border:1px solid var(--line);border-left:4px solid var(--cy);
+  border-radius:18px;padding:14px 14px 15px;
+}
+.fcard.remark{border-left-color:var(--acc2)}
+.fcard .top{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.fcard .del{font-weight:800;font-size:16px;overflow-wrap:anywhere}
+.fcard .pris{font-family:"Bebas Neue",Impact,sans-serif;font-size:26px;color:var(--acc2);line-height:1;text-align:right;overflow-wrap:anywhere}
+.fcard .when{margin-top:4px;color:var(--dim);font-size:13px}
+.fcard p{margin:8px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.45}
+.fcard a{font-weight:800;text-decoration:none}
+.empty{
+  background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.16);
+  border-radius:22px;padding:22px 16px;text-align:left;
+}
+.empty b{display:block;font-size:17px;margin-bottom:4px}
+.empty p{margin:0;color:var(--mut);line-height:1.45}
+.note-box{margin-top:16px}
+.note-box label{display:block;margin:0 0 6px;color:var(--mut);font-size:13px;font-weight:700}
+textarea{
+  width:100%;background:#0d1016;color:var(--txt);border:1px solid rgba(255,255,255,.1);
+  border-radius:16px;padding:14px;font:16px/1.45 Inter,system-ui,sans-serif;
+  min-height:120px;resize:vertical;
+}
+.status{min-height:1.2em;margin:8px 0 0;color:var(--mut);font-size:14px}
+.status.err{color:#ffb4ae}
+.status.ok{color:var(--ok)}
+.tip{margin:16px 0 0;padding:14px 16px;border-radius:18px;background:linear-gradient(100deg,rgba(58,209,255,.12),rgba(255,204,0,.08));border:1px solid rgba(255,255,255,.1);color:var(--mut);font-size:14px;line-height:1.5}
+.tip b{color:var(--acc2);letter-spacing:.04em}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation:none!important;transition:none!important}
+}
+@media (min-width:720px){
+  .wrap{padding-top:28px}
+  .hero{padding:32px 28px 22px}
+  .sub{font-size:18px}
+  .fcard .pris{font-size:28px;white-space:nowrap}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="./">Tilbage til Lucas scooter</a>
+  <header class="hero">
+    <span class="tag"><i></i> PRISVAGT · LIVA</span>
+    <h1>Daglige søgninger</h1>
+    <p class="sub">Fund fra den daglige prisvagt kl. 12. Nyeste dag øverst. Kurs ca. 7,47 kr/€. Priser inkl. moms, fragt til DK ikke medregnet medmindre nævnt. Intet købt, ingen sælgere kontaktet.</p>
+  </header>
+
+  <div id="days"></div>
+  <p class="tip"><b>Tip:</b> Skriv en note under hver dag, hvis du vil huske noget til søgningen. Den gemmes automatisk og kan ses på dine andre enheder.</p>
+</div>
+<script>
+const NOTES_URL = "https://textdb.dev/api/data/lucas-scooter-prisvagt-notes-0e1f94e764a713e444b5e56e71b9422c";
+const NOTES_CACHE = "lucas-scooter-prisvagt-notes";
+const noteKey = (iso) => "lucas-prisvagt-note-" + iso;
+
+const DAYS = [
+  {
+    iso: "2026-11-13",
+    title: "13.11.2026",
+    kicker: "Første kørsel",
+    fund: [
+      {
+        del: "Dæk (12\", slick, ny)",
+        pris: "€38,90 / €40,26 (ca. 290-300 kr)",
+        saelger: "scooterdiscounter.nl",
+        link: "https://www.scooterdiscounter.nl/frame/scooter-band-velg/banden-scooter/scooterbanden-12inch",
+        note: "Deestone Slick 120/70-12 €38,90 (ca. 290 kr) og Deestone Slick 130/70-12 €40,26 (ca. 300 kr). Side tjekket, virker; fragt til DK ukendt. Original Runner-dimension: for 120/70-12, bag 130/70-12. Semi-slick: Michelin Bopper 130/70-12 €47,68 samme side; Bopper 120/70-12 €58,50 hos starmoto.eu (kampagnepris, fragt ukendt). Racing-slicks PMT 120/80-12 / 130/75-12 ca. €105-128."
+      },
+      {
+        del: "Tænding Malossi MHR Team II til Yamaha/Minarelli (nr. 5519630)",
+        pris: "€430,26 (ca. 3.210 kr)",
+        saelger: "MalossiStore (sælger Resilienza Luxembourg)",
+        link: "https://www.malossistore.com/en/us/mhr-team-ii-inner-rotor-ignition-for-yamaha-minarelli-scooters-5519630-P",
+        note: "Mod forventet 3.550 kr. Virker; fragt ukendt. Bemærk: «Melotti Team 2» er sandsynligvis Malossi MHR Team II."
+      },
+      {
+        del: "Fælge/hjul Gilera Runner 12\" (brugt)",
+        pris: "35 € og 25 € (ca. 450 kr for begge)",
+        saelger: "Kleinanzeigen (Garching an der Alz, 04.10.2026)",
+        link: "https://www.kleinanzeigen.de/s-reifen-gilera-runner/k0",
+        note: "Forhjul m. dæk+skive 35 € og baghjul 25 €. Søgeside tjekket, virker; tjek fragt og at fælgene er 3.50-12 uden at være 13\"."
+      },
+      {
+        del: "Karburator Dell'Orto PHBG 19 BS (Malossi MHR 1611021)",
+        pris: "ca. €125-160 (ca. 930-1.200 kr)",
+        saelger: "starmoto.eu",
+        link: "",
+        note: "starmoto.eu-linket gav 404, så ikke bekræftet."
+      }
+    ],
+    remarks: [
+      {
+        del: "Forgaffel",
+        pris: "€1.399-1.499 (ca. 10.500-11.200 kr)",
+        saelger: "scooter-center.com, piecesracing.com",
+        note: "Malossi F37R (nr. 4616135, «Melotti F37») koster ny €1.399-1.499, altså dyrere end 4.000-7.000 kr. Ingen brugt F37R på Kleinanzeigen. Kun til biler før 2006 (Runner 50 fra 2004 passer)."
+      },
+      {
+        del: "Cylinder og topstykke",
+        pris: "€439-529 (3.300-3.950 kr)",
+        saelger: "",
+        note: "Malossi MHR Team Testa Rossa 70 Minarelli LC (nr. 3115390) ca. €439-529, dyrere end 2.500 kr. Billigere alternativ: MHR Replica 70 (nr. 318430) €269-306 (2.000-2.300 kr), men er ikke Testa Rossa."
+      },
+      {
+        del: "Udstødning Malossi MHR Team 2 Minarelli (3219491)",
+        pris: "€324-471 + fragt",
+        saelger: "wrs.it, KGI.dk",
+        note: "wrs.it €471 + €65 fragt, altså over 2.000-3.000 kr. KGI.dk (DK) midlertidigt udsolgt."
+      },
+      {
+        del: "Koblingsklokke Malossi MHR Wing Bell 107 mm (7714313)",
+        pris: "€116-129 (ca. 870-960 kr)",
+        saelger: "",
+        note: "Dyrere end 650 kr."
+      },
+      {
+        del: "Variator Guerilla Runner",
+        pris: "€76,82",
+        saelger: "motorkit.com",
+        note: "«Guerilla Runner»-variator Malossi MHR 2000 (518648) €76,82 hos motorkit.com, men den er til Piaggio-motor; motoren er Yamaha/Minarelli, så den passer sandsynligvis ikke. Afklar motor/variator."
+      },
+      {
+        del: "Ikke fundet/priset",
+        pris: "",
+        saelger: "DBA",
+        note: "Bremsekalibre, kobling, pumptrappe, gaskabler/småmateriale, baghjul Skewfarms. DBA gav ingen konkrete relevante annoncer."
+      }
+    ]
+  }
+];
+
+function cleanNotes(raw) {
+  const notes = {};
+  const src = raw && typeof raw === "object" ? (raw.notes && typeof raw.notes === "object" ? raw.notes : raw) : {};
+  Object.keys(src).forEach((key) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return;
+    const item = src[key];
+    const text = typeof item === "string" ? item : String(item?.text ?? "");
+    const ts = typeof item === "object" && item ? Number(item.ts) || 0 : 0;
+    notes[key] = { text: text.slice(0, 4000), ts };
+  });
+  return { v: 1, notes, ts: Number(raw?.ts) || 0 };
+}
+
+function readCache() {
+  try { return cleanNotes(JSON.parse(localStorage.getItem(NOTES_CACHE) || "null")); }
+  catch { return cleanNotes(null); }
+}
+
+function writeLocal(state) {
+  localStorage.setItem(NOTES_CACHE, JSON.stringify(state));
+  Object.keys(state.notes).forEach((iso) => {
+    localStorage.setItem(noteKey(iso), state.notes[iso].text);
+  });
+}
+
+async function fetchRemote() {
+  const response = await fetch(NOTES_URL + "?_=" + Date.now(), { cache: "no-store" });
+  if (response.status === 404) return cleanNotes(null);
+  if (!response.ok) throw new Error(String(response.status));
+  const text = await response.text();
+  if (!text.trim()) return cleanNotes(null);
+  let parsed = JSON.parse(text);
+  if (typeof parsed === "string") parsed = JSON.parse(parsed);
+  return cleanNotes(parsed);
+}
+
+function mergeNotes(left, right) {
+  const notes = { ...left.notes };
+  Object.keys(right.notes).forEach((iso) => {
+    const a = notes[iso];
+    const b = right.notes[iso];
+    if (!a || b.ts >= a.ts) notes[iso] = b;
+  });
+  return { v: 1, notes, ts: Math.max(left.ts || 0, right.ts || 0) };
+}
+
+let state = readCache();
+let chain = Promise.resolve();
+const timers = {};
+
+function statusOf(iso, text, cls) {
+  const el = document.getElementById("status-" + iso);
+  if (!el) return;
+  el.textContent = text;
+  el.className = "status" + (cls ? " " + cls : "");
+}
+
+async function pushNotes(next) {
+  const response = await fetch(NOTES_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify(next),
+    cache: "no-store"
+  });
+  if (!response.ok) throw new Error(String(response.status));
+  const check = await fetchRemote();
+  return mergeNotes(check, next);
+}
+
+function queueSave(iso) {
+  statusOf(iso, "Gemmer…", "");
+  clearTimeout(timers[iso]);
+  timers[iso] = setTimeout(() => {
+    chain = chain.then(async () => {
+      const local = readCache();
+      let base = mergeNotes(local, state);
+      try { base = mergeNotes(await fetchRemote(), base); } catch { /* keep local and try to push */ }
+      const next = { v: 1, notes: { ...base.notes }, ts: Date.now() };
+      state = next;
+      writeLocal(next);
+      try {
+        const saved = await pushNotes(next);
+        state = saved;
+        writeLocal(saved);
+        statusOf(iso, "Gemt", "ok");
+      } catch {
+        statusOf(iso, "Ikke gemt endnu. Tjek nettet.", "err");
+      }
+    });
+  }, 400);
+}
+
+function noteText(iso) {
+  const fromState = state.notes[iso]?.text;
+  if (typeof fromState === "string") return fromState;
+  try { return localStorage.getItem(noteKey(iso)) || ""; }
+  catch { return ""; }
+}
+
+function card(item, remark) {
+  const art = document.createElement("article");
+  art.className = "fcard" + (remark ? " remark" : "");
+  const top = document.createElement("div");
+  top.className = "top";
+  const name = document.createElement("div");
+  name.className = "del";
+  name.textContent = item.del || "Fund";
+  top.append(name);
+  if (item.pris) {
+    const price = document.createElement("div");
+    price.className = "pris";
+    price.textContent = item.pris;
+    top.append(price);
+  }
+  art.append(top);
+  if (item.saelger) {
+    const when = document.createElement("div");
+    when.className = "when";
+    when.textContent = item.saelger;
+    art.append(when);
+  }
+  if (item.note) {
+    const p = document.createElement("p");
+    p.textContent = item.note;
+    art.append(p);
+  }
+  if (item.link) {
+    const a = document.createElement("a");
+    a.href = item.link;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.textContent = "Åbn link";
+    art.append(a);
+  }
+  return art;
+}
+
+function render() {
+  const root = document.getElementById("days");
+  root.replaceChildren();
+  const days = DAYS.slice().sort((a, b) => b.iso.localeCompare(a.iso));
+  if (!days.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.innerHTML = "<b>Ingen fund endnu</b><p>Listen er tom, indtil LIVA lægger et fund ind. Prisvagten kører hver dag kl. 12.</p>";
+    root.append(empty);
+    return;
+  }
+  days.forEach((day) => {
+    const section = document.createElement("section");
+    section.className = "day";
+    section.id = "dag-" + day.iso;
+    const head = document.createElement("div");
+    head.className = "section-head";
+    const box = document.createElement("div");
+    const kicker = document.createElement("p");
+    kicker.className = "kicker";
+    kicker.textContent = day.kicker || "Prisvagt";
+    const h2 = document.createElement("h2");
+    h2.textContent = day.title;
+    const lead = document.createElement("p");
+    lead.className = "lead";
+    const fundCount = (day.fund || []).length;
+    lead.textContent = fundCount ? (fundCount + " fund") : "Ingen fund endnu";
+    box.append(kicker, h2, lead);
+    head.append(box);
+    section.append(head);
+
+    const list = document.createElement("div");
+    list.className = "cards";
+    if (!(day.fund || []).length && !(day.remarks || []).length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.innerHTML = "<b>Ingen fund endnu</b><p>Der blev ikke lagt fund ind for denne dag.</p>";
+      list.append(empty);
+    } else {
+      (day.fund || []).forEach((item) => list.append(card(item, false)));
+    }
+    if ((day.remarks || []).length) {
+      const h3 = document.createElement("h3");
+      h3.textContent = "Ikke billigere / bemærkninger";
+      list.append(h3);
+      day.remarks.forEach((item) => list.append(card(item, true)));
+    }
+    section.append(list);
+
+    const noteBox = document.createElement("div");
+    noteBox.className = "note-box";
+    const label = document.createElement("label");
+    const areaId = "note-" + day.iso;
+    label.setAttribute("for", areaId);
+    label.textContent = "Note til " + day.title;
+    const area = document.createElement("textarea");
+    area.id = areaId;
+    area.maxLength = 4000;
+    area.placeholder = "Skriv en note til denne søgning...";
+    area.value = noteText(day.iso);
+    area.addEventListener("input", () => {
+      const now = Date.now();
+      state = {
+        v: 1,
+        ts: now,
+        notes: { ...state.notes, [day.iso]: { text: area.value.slice(0, 4000), ts: now } }
+      };
+      writeLocal(state);
+      queueSave(day.iso);
+    });
+    const status = document.createElement("p");
+    status.className = "status";
+    status.id = "status-" + day.iso;
+    status.setAttribute("role", "status");
+    noteBox.append(label, area, status);
+    section.append(noteBox);
+    root.append(section);
+  });
+}
+
+render();
+
+(async () => {
+  try {
+    const remote = await fetchRemote();
+    state = mergeNotes(remote, state);
+    writeLocal(state);
+    document.querySelectorAll("textarea[id^='note-']").forEach((area) => {
+      if (document.activeElement === area) return;
+      const iso = area.id.slice(5);
+      area.value = noteText(iso);
+    });
+  } catch {
+    /* Offline: vis den lokale kopi. */
+  }
+})();
+</script>
+</body>
+</html>
