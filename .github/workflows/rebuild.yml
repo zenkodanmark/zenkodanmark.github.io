@@ -50,7 +50,7 @@ jobs:
           # send-test is the two-day LIVA upload page.
           # mangler is the public defect pages (Prøvestenen) plus photos committed by the upload function.
           # lucas-scooter is Lucas' scooter PWA (not part of Plads).
-          # foto is the glove-friendly photo upload page (Supabase foto_upload, routed to OneDrive by LIVA).
+          # foto is the glove-friendly photo upload page (Supabase foto_upload, routed to OneDrive by LIVA), including foto/ro/.
           # None of them are part of the Plads build. Keep applies to both loops so a future build output cannot wipe them.
           keep = {".git", ".github", "send-test", "ole-kalender", "mangler", "lucas-scooter", "foto"}
           for child in list(dst.iterdir()):

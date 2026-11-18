@@ -35,10 +35,17 @@
   #msg { margin-top:18px; padding:18px; border-radius:16px; font-size:24px; font-weight:700; display:none; }
   #msg.ok { display:block; background:var(--ok); } #msg.err { display:block; background:var(--pr); } #msg.busy { display:block; background:#333; }
   .count { color:var(--mut); margin-top:8px; font-size:18px; }
+  .lang { display:flex; justify-content:flex-end; gap:8px; margin:0 0 4px; }
+  .lang a { color:#fff; text-decoration:none; font-size:16px; font-weight:800; min-width:48px; min-height:44px; display:flex; align-items:center; justify-content:center; padding:0 12px; border-radius:999px; border:2px solid #666; }
+  .lang a[aria-current=page] { background:#fff; color:#111; border-color:#fff; }
 </style>
 </head>
 <body>
 <main>
+  <nav class="lang" aria-label="Sprog">
+    <a href="/foto/" aria-current="page">DA</a>
+    <a id="lang-ro" href="/foto/ro/">RO</a>
+  </nav>
   <h1>Zenko foto-upload <span class="pl">Wysyłanie zdjęć</span></h1>
 
   <div class="step">1. Vælg kategori <span class="pl">Wybierz kategorię</span></div>
@@ -65,6 +72,9 @@
 </main>
 <script>
 (() => {
+  const roLink = document.getElementById("lang-ro");
+  if (roLink && location.search) roLink.search = location.search;
+
   const SB_URL = "https://jauggqxhemjnbxoxkpeh.supabase.co";
   const SB_KEY = "sb_publishable_GDFhOi3Ek3XmECz2NHQC0g_3qPvPC93"; // offentlig publishable key (kun insert via RLS)
   const BUCKET = "foto-upload", MAX_PX = 2500, MAX_BYTES = 950 * 1024;
